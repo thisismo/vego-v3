@@ -7,6 +7,9 @@ dependencies:
   - $compose.foundation: exported
   - $compose.material3: exported
 
+dependencies@android:
+  - $libs.koin.android: exported
+
 settings:
   compose:
     enabled: true

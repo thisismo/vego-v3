@@ -16,6 +16,10 @@ struct ContentView: View {
 
 @main
 struct iosApp: App {
+    init() {
+        CommonClientModule_iosKt.doInitKoinIos()
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
