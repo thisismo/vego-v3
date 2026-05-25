@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import io.thisismo.vego.client.core.ClientCore
 import io.thisismo.vego.client.io.NetworkMonitor
+import io.thisismo.vego.client.io.NetworkStatus
 import org.koin.compose.koinInject
 
 @Composable
@@ -19,14 +20,18 @@ fun Screen() {
     LaunchedEffect(Unit) {
         clientCore.initialize()
     }
-    val isOnline by networkMonitor.isOnline.collectAsState()
+    val networkStatus by networkMonitor.status.collectAsState()
     MaterialTheme {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            BasicText("Hello, ${if (isOnline) "online" else "offline"}!")
+            BasicText("Hello, ${when (networkStatus) {
+                NetworkStatus.Online -> "online"
+                NetworkStatus.Offline -> "offline"
+                NetworkStatus.Unknown -> "unknown"
+            }}!")
         }
     }
 }

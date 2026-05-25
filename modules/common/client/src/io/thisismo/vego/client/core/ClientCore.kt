@@ -6,4 +6,8 @@ class ClientCore(private val networkMonitor: NetworkMonitor) {
     suspend fun initialize() {
         networkMonitor.initialize()
     }
+
+    suspend fun tearDown() {
+        networkMonitor.close()
+    }
 }

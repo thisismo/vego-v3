@@ -2,7 +2,10 @@ package io.thisismo.vego.client.io
 
 import kotlinx.coroutines.flow.StateFlow
 
+enum class NetworkStatus { Unknown, Online, Offline }
+
 interface NetworkMonitor {
-    val isOnline: StateFlow<Boolean>
-    fun initialize()
+    val status: StateFlow<NetworkStatus>
+    suspend fun initialize(): Boolean
+    fun close()
 }
