@@ -1,7 +1,9 @@
 package io.thisismo.vego.client.core
 
-class ClientCore() {
-    suspend fun initialize() {
+import io.thisismo.vego.client.io.NetworkMonitor
 
+class ClientCore(private val networkMonitor: NetworkMonitor) {
+    suspend fun initialize() {
+        networkMonitor.initialize()
     }
 }
