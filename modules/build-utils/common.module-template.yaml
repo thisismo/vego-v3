@@ -1,0 +1,4 @@
+dependencies:
+  - bom: $libs.koin.bom
+  - $libs.koin.core
+  - $libs.koin.test

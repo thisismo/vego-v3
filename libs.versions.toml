@@ -1,0 +1,15 @@
+[versions]
+koin-bom = "4.2.1"
+
+[libraries]
+#Koin
+koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin-bom" }
+koin-core = { module = "io.insert-koin:koin-core" }
+koin-test = { module = "io.insert-koin:koin-test" }
+
+#Koin Compose
+koin-compose = { module = "io.insert-koin:koin-compose" }
+koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel" }
+
+#Koin Ktor
+koin-ktor = { module = "io.insert-koin:koin-ktor" }

@@ -1,0 +1,10 @@
+apply:
+  - ./common.module-template.yaml
+
+dependencies:
+  - $libs.koin.compose
+  - $libs.koin.compose.viewmodel
+
+settings:
+  compose:
+    enabled: true

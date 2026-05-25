@@ -1,0 +1,6 @@
+product:
+  type: kmp/lib
+  platforms: [ android, iosArm64, iosSimulatorArm64, iosX64 ]
+
+apply:
+  - ../../build-utils/client.module-template.yaml

@@ -1,0 +1,8 @@
+product:
+  type: ios/app
+
+dependencies:
+  - ../../modules/common/client
+
+settings:
+  compose: enabled
