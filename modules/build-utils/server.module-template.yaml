@@ -3,3 +3,4 @@ apply:
 
 dependencies:
   - $libs.koin.ktor
+  - bom: $libs.ktor.bom

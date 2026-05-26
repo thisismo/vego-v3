@@ -6,9 +6,17 @@ dependencies:
   - $libs.koin.compose.viewmodel
   - $compose.foundation: exported
   - $compose.material3: exported
+  - bom: $libs.ktor.bom
+  - $libs.ktor.client.core: exported
+  - $libs.ktor.client.auth
+
+dependencies@ios:
+  - $libs.ktor.client.darwin: exported
+
 
 dependencies@android:
   - $libs.koin.android: exported
+  - $libs.ktor.client.android: exported
 
 settings:
   compose:

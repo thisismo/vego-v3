@@ -1,0 +1,566 @@
+-------------------------------------
+Translated Report (Full Report Below)
+-------------------------------------
+Process:             ios-app [6593]
+Path:                /Users/USER/Library/Developer/CoreSimulator/Devices/06EB987C-168F-4E14-AF6E-210ED98070A1/data/Containers/Bundle/Application/04C00145-411B-4BA0-A187-89089713983D/ios-app.app/ios-app
+Identifier:          vego-v3
+Version:             1.0 (1)
+Code Type:           ARM-64 (Native)
+Role:                Foreground
+Parent Process:      launchd_sim [5306]
+Coalition:           com.apple.CoreSimulator.SimDevice.06EB987C-168F-4E14-AF6E-210ED98070A1 [1536]
+Responsible Process: SimulatorTrampoline [2452]
+User ID:             502
+
+Date/Time:           2026-05-26 03:30:54.8276 +0200
+Launch Time:         2026-05-26 03:30:53.8792 +0200
+Hardware Model:      Mac16,8
+OS Version:          macOS 26.5 (25F71)
+Release Type:        User
+
+Crash Reporter Key:  766AF462-ACAA-8C1E-E071-7CE27CADC04E
+Incident Identifier: B461DE7D-3D9F-4012-A7FF-BEE1EE084AEE
+
+Time Awake Since Boot: 1400 seconds
+
+System Integrity Protection: enabled
+
+Triggered by Thread: 0, Dispatch Queue: com.apple.main-thread
+
+Exception Type:    EXC_CRASH (SIGABRT)
+Exception Codes:   0x0000000000000000, 0x0000000000000000
+
+Termination Reason:  Namespace SIGNAL, Code 6, Abort trap: 6
+Terminating Process: ios-app [6593]
+
+
+Thread 0 Crashed::  Dispatch queue: com.apple.main-thread
+0   libsystem_kernel.dylib        	       0x10027488c __pthread_kill + 8
+1   libsystem_pthread.dylib       	       0x10046e338 pthread_kill + 264
+2   libsystem_c.dylib             	       0x18017b984 abort + 116
+3   ios-app.debug.dylib           	       0x105082568 (anonymous namespace)::terminateWithUnhandledException(ObjHeader*)::$_0::operator()() const + 52
+4   ios-app.debug.dylib           	       0x105082400 void (anonymous namespace)::$_0::operator()<(anonymous namespace)::terminateWithUnhandledException(ObjHeader*)::$_0>((anonymous namespace)::terminateWithUnhandledException(ObjHeader*)::$_0) + 64
+5   ios-app.debug.dylib           	       0x105082174 (anonymous namespace)::terminateWithUnhandledException(ObjHeader*) + 12
+6   ios-app.debug.dylib           	       0x105082148 (anonymous namespace)::processUnhandledException(ObjHeader*) + 148
+7   ios-app.debug.dylib           	       0x105081d74 (anonymous namespace)::TerminateHandler::kotlinHandler() + 236
+8   libc++abi.dylib               	       0x1802ce790 std::__terminate(void (*)()) + 12
+9   libc++abi.dylib               	       0x1802d170c __cxxabiv1::failed_throw(__cxxabiv1::__cxa_exception*) + 32
+10  libc++abi.dylib               	       0x1802d16ec __cxa_throw + 88
+11  ios-app.debug.dylib           	       0x105091b40 ExceptionObjHolder::Throw(ObjHeader*) + 64
+12  ios-app.debug.dylib           	       0x105091b00 ThrowException + 12
+13  ios-app.debug.dylib           	       0x10470720c kfun:androidx.compose.ui.scene.BaseComposeScene#setContent(kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){} + 3036
+14  ios-app.debug.dylib           	       0x104f5971c kfun:androidx.compose.ui.scene.ComposeScene#setContent(kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}-trampoline + 92
+15  ios-app.debug.dylib           	       0x1047cabfc kfun:androidx.compose.ui.scene.ComposeSceneMediator.ComposeSceneMediator$setContent$1.invoke#internal + 256
+16  ios-app.debug.dylib           	       0x1047cb980 kfun:androidx.compose.ui.scene.ComposeSceneMediator.ComposeSceneMediator$setContent$1.$<bridge-DN>invoke(){}#internal + 72
+17  ios-app.debug.dylib           	       0x104ed2f80 kfun:kotlin.Function0#invoke(){}1:0-trampoline + 92
+18  ios-app.debug.dylib           	       0x10480370c kfun:androidx.compose.ui.window.BackgroundInputView.BackgroundInputView$runOnceOnAppeared$1.invoke#internal + 120
+19  ios-app.debug.dylib           	       0x104803788 kfun:androidx.compose.ui.window.BackgroundInputView.BackgroundInputView$runOnceOnAppeared$1.$<bridge-DN>invoke(){}#internal + 72
+20  ios-app.debug.dylib           	       0x104ed2f80 kfun:kotlin.Function0#invoke(){}1:0-trampoline + 92
+21  ios-app.debug.dylib           	       0x104802048 kfun:androidx.compose.ui.window.BackgroundInputView.runOnAppearedIfEligible#internal + 1240
+22  ios-app.debug.dylib           	       0x10480228c kfun:androidx.compose.ui.window.BackgroundInputView#objc:layoutSubviews + 248
+23  ios-app.debug.dylib           	       0x104803214 _6f72672e6a6574627261696e732e636f6d706f73652e75693a75692f6f70742f6275696c644167656e742f776f726b2f346664313831636635653831343836352f636f6d706f73652f75692f75692f7372632f75696b69744d61696e2f6b6f746c696e2f616e64726f6964782f636f6d706f73652f75692f77696e646f772f496e70757456696577732e75696b69742e6b74_49_knbridge1 + 144
+24  UIKitCore                     	       0x18564dd74 0x185289000 + 3951988
+25  UIKitCore                     	       0x18564e11c 0x185289000 + 3952924
+26  UIKitCore                     	       0x186ab0548 -[UIView(CALayerDelegate) layoutSublayersOfLayer:] + 2648
+27  QuartzCore                    	       0x18cfa7548 CA::Layer::perform_update_(CA::Layer*, CALayer*, unsigned int, CA::LayerUpdateReason, CA::Transaction*) + 456
+28  QuartzCore                    	       0x18cfa6d94 CA::Layer::update_if_needed_(CA::Transaction*, CA::LayerUpdateReason) + 600
+29  QuartzCore                    	       0x18cfb2978 CA::Layer::layout_and_display_if_needed(CA::Transaction*) + 156
+30  QuartzCore                    	       0x18cecacc8 CA::Context::commit_transaction(CA::Transaction*, double, double*) + 560
+31  QuartzCore                    	       0x18cef88f0 CA::Transaction::commit() + 632
+32  UIKitCore                     	       0x1864becdc __34-[UIApplication _firstCommitBlock]_block_invoke_2 + 32
+33  CoreFoundation                	       0x180422d28 __CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__ + 20
+34  CoreFoundation                	       0x1804224b4 __CFRunLoopDoBlocks + 340
+35  CoreFoundation                	       0x180421824 __CFRunLoopRun + 788
+36  CoreFoundation                	       0x18041c904 _CFRunLoopRunSpecificWithOptions + 496
+37  GraphicsServices              	       0x1933599c0 GSEventRunModal + 116
+38  UIKitCore                     	       0x1864a54cc -[UIApplication _run] + 776
+39  UIKitCore                     	       0x186b9f910 UIApplicationMain + 120
+40  SwiftUI                       	       0x1d2ecdfa4 closure #1 in KitRendererCommon(_:) + 164
+41  SwiftUI                       	       0x1d2ecdd18 runApp<A>(_:) + 180
+42  SwiftUI                       	       0x1d2c5f094 static App.main() + 148
+43  ios-app.debug.dylib           	       0x103f6a170 static iosApp.$main() + 40
+44  ios-app.debug.dylib           	       0x103f6a218 __debug_main_executable_dylib_entry_point + 12
+45  dyld_sim                      	       0x10030f0e4 start_sim + 20
+46  dyld                          	       0x10056fe00 start + 6992
+
+Thread 1:: GC Timer thread
+0   libsystem_kernel.dylib        	       0x10027002c __psynch_cvwait + 8
+1   libsystem_pthread.dylib       	       0x10046eb00 _pthread_cond_wait + 972
+2   libc++.1.dylib                	       0x180300698 std::__1::condition_variable::__do_timed_wait(std::__1::unique_lock<std::__1::mutex>&, std::__1::chrono::time_point<std::__1::chrono::system_clock, std::__1::chrono::duration<long long, std::__1::ratio<1l, 1000000000l>>>) + 100
+3   ios-app.debug.dylib           	       0x10507f28c bool std::__1::condition_variable::wait_for[abi:ne200100]<long long, std::__1::ratio<1l, 1000000000l>, void kotlin::RepeatedTimer<kotlin::steady_clock>::Run<kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()>(kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&)::'lambda'()>(std::__1::unique_lock<std::__1::mutex>&, std::__1::chrono::duration<kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'(), std::__1::ratio<1l, 1000000000l>> const&, void kotlin::RepeatedTimer<kotlin::steady_clock>::Run<kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()>(kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&)::'lambda'()) + 352
+4   ios-app.debug.dylib           	       0x10507e6b0 void kotlin::RepeatedTimer<kotlin::steady_clock>::Run<kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()>(kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&) + 252
+5   ios-app.debug.dylib           	       0x10507eed8 void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(kotlin::ScopedThread::attributes, void (*&&)(void (kotlin::RepeatedTimer<kotlin::steady_clock>::*&&)(kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&) noexcept, kotlin::RepeatedTimer<kotlin::steady_clock>*&&, kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&), void (kotlin::RepeatedTimer<kotlin::steady_clock>::*&&)(kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&) noexcept, kotlin::RepeatedTimer<kotlin::steady_clock>*&&, kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&), kotlin::ScopedThread::attributes, void (*)(void (kotlin::RepeatedTimer<kotlin::steady_clock>::*&&)(kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&) noexcept, kotlin::RepeatedTimer<kotlin::steady_clock>*&&, kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&), void (kotlin::RepeatedTimer<kotlin::steady_clock>::*)(kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&) noexcept, kotlin::RepeatedTimer<kotlin::steady_clock>*, kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()>>(void*) + 232
+6   libsystem_pthread.dylib       	       0x10046e63c _pthread_start + 104
+7   libsystem_pthread.dylib       	       0x100469a34 thread_start + 8
+
+Thread 2:: Main GC thread
+0   libsystem_kernel.dylib        	       0x10027002c __psynch_cvwait + 8
+1   libsystem_pthread.dylib       	       0x10046eb00 _pthread_cond_wait + 972
+2   libc++.1.dylib                	       0x180300604 std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&) + 28
+3   ios-app.debug.dylib           	       0x105074e08 kotlin::gc::internal::MainGCThread<kotlin::gc::internal::PmcsGCTraits>::body() + 220
+4   ios-app.debug.dylib           	       0x105074ad8 void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(kotlin::ScopedThread::attributes, void (*&&)(kotlin::gc::internal::MainGCThread<kotlin::gc::internal::PmcsGCTraits>::MainGCThread(GCStateHolder&, kotlin::alloc::Allocator&, kotlin::gcScheduler::GCScheduler&, kotlin::gc::mark::ParallelMark&)::'lambda'()&&), kotlin::gc::internal::MainGCThread<kotlin::gc::internal::PmcsGCTraits>::MainGCThread(GCStateHolder&, kotlin::alloc::Allocator&, kotlin::gcScheduler::GCScheduler&, kotlin::gc::mark::ParallelMark&)::'lambda'()&&), kotlin::ScopedThread::attributes, void (*)(kotlin::gc::internal::MainGCThread<kotlin::gc::internal::PmcsGCTraits>::MainGCThread(GCStateHolder&, kotlin::alloc::Allocator&, kotlin::gcScheduler::GCScheduler&, kotlin::gc::mark::ParallelMark&)::'lambda'()&&), kotlin::gc::internal::MainGCThread<kotlin::gc::internal::PmcsGCTraits>::MainGCThread(GCStateHolder&, kotlin::alloc::Allocator&, kotlin::gcScheduler::GCScheduler&, kotlin::gc::mark::ParallelMark&)::'lambda'()>>(void*) + 208
+5   libsystem_pthread.dylib       	       0x10046e63c _pthread_start + 104
+6   libsystem_pthread.dylib       	       0x100469a34 thread_start + 8
+
+Thread 3:
+
+Thread 4:
+
+Thread 5:
+
+Thread 6:
+
+Thread 7:: com.apple.uikit.eventfetch-thread
+0   libsystem_kernel.dylib        	       0x10026cb70 mach_msg2_trap + 8
+1   libsystem_kernel.dylib        	       0x10027de5c mach_msg2_internal + 72
+2   libsystem_kernel.dylib        	       0x100274c44 mach_msg_overwrite + 484
+3   libsystem_kernel.dylib        	       0x10026cef0 mach_msg + 20
+4   CoreFoundation                	       0x1804227c0 __CFRunLoopServiceMachPort + 156
+5   CoreFoundation                	       0x180421978 __CFRunLoopRun + 1128
+6   CoreFoundation                	       0x18041c904 _CFRunLoopRunSpecificWithOptions + 496
+7   Foundation                    	       0x18112fa4c -[NSRunLoop(NSRunLoop) runMode:beforeDate:] + 208
+8   Foundation                    	       0x18112fc68 -[NSRunLoop(NSRunLoop) runUntilDate:] + 60
+9   UIKitCore                     	       0x1861d7ad4 -[UIEventFetcher threadMain] + 404
+10  Foundation                    	       0x181154edc __NSThread__start__ + 716
+11  libsystem_pthread.dylib       	       0x10046e63c _pthread_start + 104
+12  libsystem_pthread.dylib       	       0x100469a34 thread_start + 8
+
+Thread 8:
+
+Thread 9:
+
+Thread 10:
+
+Thread 11:
+
+Thread 12:
+
+Thread 13:
+
+Thread 14:
+
+Thread 15:
+
+Thread 16:
+
+Thread 17:
+
+Thread 18:
+
+Thread 19:
+
+Thread 20:
+
+Thread 21:
+
+Thread 22:
+
+Thread 23:
+
+Thread 24:
+
+Thread 25:
+0   libsystem_kernel.dylib        	       0x10027002c __psynch_cvwait + 8
+1   libsystem_pthread.dylib       	       0x10046eb00 _pthread_cond_wait + 972
+2   ios-app.debug.dylib           	       0x10509fda8 (anonymous namespace)::waitInNativeState(_opaque_pthread_cond_t*, _opaque_pthread_mutex_t*) + 80
+3   ios-app.debug.dylib           	       0x10509efe8 Worker::processQueueElement(bool) + 700
+4   ios-app.debug.dylib           	       0x10509ec38 (anonymous namespace)::workerRoutine(void*) + 200
+5   libsystem_pthread.dylib       	       0x10046e63c _pthread_start + 104
+6   libsystem_pthread.dylib       	       0x100469a34 thread_start + 8
+
+
+Thread 0 crashed with ARM Thread State (64-bit):
+    x0: 0x0000000000000000   x1: 0x0000000000000000   x2: 0x0000000000000000   x3: 0x0000000000000000
+    x4: 0x0000000101800300   x5: 0x001e70c28043b048   x6: 0x0000000000000000   x7: 0xfffff0007ffff800
+    x8: 0x0000000100609e00   x9: 0x8311e983c825f2c2  x10: 0x0000000000000002  x11: 0x00000000fffffffd
+   x12: 0x0000000000000000  x13: 0x0000000000000000  x14: 0x0000000000000000  x15: 0x0000000000000000
+   x16: 0x0000000000000148  x17: 0x0000000100dc6970  x18: 0x0000000000000000  x19: 0x0000000000000006
+   x20: 0x0000000000000103  x21: 0x0000000100609ee0  x22: 0x0000000000000001  x23: 0x00000001f3ba5000
+   x24: 0x000000023a5db3b8  x25: 0x0000000101681180  x26: 0x000000016fba5870  x27: 0x000000016fba5880
+   x28: 0x000000016fba5890   fp: 0x000000016fba46b0   lr: 0x000000010046e338
+    sp: 0x000000016fba4690   pc: 0x000000010027488c cpsr: 0x40000000
+   far: 0x0000000000000000  esr: 0x56000080 (Syscall)
+
+Binary Images:
+       0x100254000 -        0x100257fff vego-v3 (1.0) <9e2e3298-c8e2-3410-ad63-181c5caf15ce> /Users/USER/Library/Developer/CoreSimulator/Devices/06EB987C-168F-4E14-AF6E-210ED98070A1/data/Containers/Bundle/Application/04C00145-411B-4BA0-A187-89089713983D/ios-app.app/ios-app
+       0x100304000 -        0x100353fff dyld_sim (*) <ba544d9a-46ab-3c59-a00f-aba1479d2079> /Volumes/VOLUME/*/dyld_sim
+       0x103f68000 -        0x105e7ffff ios-app.debug.dylib (*) <ed3d9d5f-c209-3067-92ef-0d5a9cefb9ee> /Users/USER/Library/Developer/CoreSimulator/Devices/06EB987C-168F-4E14-AF6E-210ED98070A1/data/Containers/Bundle/Application/04C00145-411B-4BA0-A187-89089713983D/ios-app.app/ios-app.debug.dylib
+       0x1003c0000 -        0x1003cbfff libsystem_platform.dylib (*) <0831b8d2-190f-31fc-9eb6-ea8ba11fe47b> /usr/lib/system/libsystem_platform.dylib
+       0x10026c000 -        0x1002a7fff libsystem_kernel.dylib (*) <856091df-df82-3985-9695-28eac306bcb5> /usr/lib/system/libsystem_kernel.dylib
+       0x100468000 -        0x100477fff libsystem_pthread.dylib (*) <1e522024-387b-3d18-81ca-f4559198954b> /usr/lib/system/libsystem_pthread.dylib
+       0x100d6c000 -        0x100d77fff libobjc-trampolines.dylib (*) <75fa6778-178f-394f-9c63-711780430596> /Volumes/VOLUME/*/libobjc-trampolines.dylib
+       0x102530000 -        0x102567fff com.apple.MTLSimDriver (373.2) <8339ca77-3986-3588-9df9-8b8d511ae608> /Volumes/VOLUME/*/MTLSimDriver.framework/MTLSimDriver
+       0x1025c0000 -        0x1025effff com.apple.gpusw.MetalSerializer (1.0) <19460939-4bce-3e8d-8868-5388dd78ace3> /Volumes/VOLUME/*/MetalSerializer.framework/MetalSerializer
+       0x102cdc000 -        0x102d37fff com.apple.dyld.dyld-framework (*) <5388c6c4-c09d-351e-85e6-794aeb77c3a9> /Volumes/VOLUME/*/Dyld.framework/Dyld
+       0x100550000 -        0x1005f7fff dyld (*) <a237ef81-b68b-37ba-a165-92c965529534> /usr/lib/dyld
+       0x180108000 -        0x1801842b7 libsystem_c.dylib (*) <05f4b01b-e685-39fa-93f3-de10cd9b511a> /Volumes/VOLUME/*/libsystem_c.dylib
+       0x1802be000 -        0x1802d66df libc++abi.dylib (*) <ca04d801-3e4b-3a57-aead-0a5eb2db0671> /Volumes/VOLUME/*/libc++abi.dylib
+       0x185289000 -        0x18757573f com.apple.UIKitCore (1.0) <12463677-be34-38f7-9e11-3421bbf362fc> /Volumes/VOLUME/*/UIKitCore.framework/UIKitCore
+       0x18cdd4000 -        0x18d0ff0bf com.apple.QuartzCore (1195.14.4) <8be360df-f68a-37c7-99ee-ddaf3da9a99f> /Volumes/VOLUME/*/QuartzCore.framework/QuartzCore
+       0x18038f000 -        0x1807c04ff com.apple.CoreFoundation (6.9) <e74d7b62-0aac-3013-a55b-f15135d4bd2e> /Volumes/VOLUME/*/CoreFoundation.framework/CoreFoundation
+       0x193357000 -        0x19335ed9f com.apple.GraphicsServices (1.0) <95c64786-b053-33db-914f-5fa4b6cb8122> /Volumes/VOLUME/*/GraphicsServices.framework/GraphicsServices
+       0x1d2712000 -        0x1d38b9a9f com.apple.SwiftUI (7.5.3) <2332ef71-3e29-3e60-9849-acdd69b6b8ef> /Volumes/VOLUME/*/SwiftUI.framework/SwiftUI
+               0x0 - 0xffffffffffffffff ??? (*) <00000000-0000-0000-0000-000000000000> ???
+       0x1802e0000 -        0x18036909f libc++.1.dylib (*) <fd646c4c-99c5-3828-8199-3a66a48ff1a1> /Volumes/VOLUME/*/libc++.1.dylib
+       0x180840000 -        0x1815f8ddf com.apple.Foundation (6.9) <2cc9fce0-08f9-3a0d-8a2f-6db229462de5> /Volumes/VOLUME/*/Foundation.framework/Foundation
+
+External Modification Summary:
+  Calls made by other processes targeting this process:
+    task_for_pid: 0
+    thread_create: 0
+    thread_set_state: 0
+  Calls made by this process:
+    task_for_pid: 0
+    thread_create: 0
+    thread_set_state: 0
+  Calls made by all processes on this machine:
+    task_for_pid: 0
+    thread_create: 0
+    thread_set_state: 0
+
+VM Region Summary:
+ReadOnly portion of Libraries: Total=1.7G resident=0K(0%) swapped_out_or_unallocated=1.7G(100%)
+Writable regions: Total=87.2M written=1602K(2%) resident=1602K(2%) swapped_out=0K(0%) unallocated=85.7M(98%)
+
+                                VIRTUAL   REGION
+REGION TYPE                        SIZE    COUNT (non-coalesced)
+===========                     =======  =======
+Activity Tracing                   256K        1
+AttributeGraph Data               1024K        1
+CoreAnimation                       16K        1
+Foundation                          16K        1
+Kernel Alloc Once                   32K        1
+MALLOC                            49.0M       18
+MALLOC guard page                 4048K        4
+Memory Tag 246                    13.5M      103
+STACK GUARD                       56.4M       26
+Stack                             21.3M       26
+VM_ALLOCATE                         32K        1
+__AUTH_CONST                        32K        1
+__DATA                            45.6M      786
+__DATA_CONST                     104.5M      812
+__DATA_DIRTY                       155K       14
+__FONT_DATA                        2352        1
+__LINKEDIT                       729.4M       12
+__OBJC_RO                         55.6M        1
+__OBJC_RW                         2332K        1
+__TEXT                             1.0G      825
+__TPRO_CONST                       164K        3
+dyld private memory                3.0G       15
+mapped file                      107.0M       10
+page table in kernel              1602K        1
+shared memory                       16K        1
+===========                     =======  =======
+TOTAL                              5.1G     2666
+
+
+-----------
+Full Report
+-----------
+
+{"app_name":"ios-app","timestamp":"2026-05-26 03:30:58.00 +0200","app_version":"1.0","slice_uuid":"9e2e3298-c8e2-3410-ad63-181c5caf15ce","build_version":"1","platform":7,"bundleID":"vego-v3","share_with_app_devs":0,"is_first_party":0,"bug_type":"309","os_version":"macOS 26.5 (25F71)","roots_installed":0,"name":"ios-app","incident_id":"B461DE7D-3D9F-4012-A7FF-BEE1EE084AEE"}
+{
+  "uptime" : 1400,
+  "procRole" : "Foreground",
+  "version" : 2,
+  "userID" : 502,
+  "deployVersion" : 210,
+  "modelCode" : "Mac16,8",
+  "coalitionID" : 1536,
+  "osVersion" : {
+    "train" : "macOS 26.5",
+    "build" : "25F71",
+    "releaseType" : "User"
+  },
+  "captureTime" : "2026-05-26 03:30:54.8276 +0200",
+  "codeSigningMonitor" : 2,
+  "incident" : "B461DE7D-3D9F-4012-A7FF-BEE1EE084AEE",
+  "pid" : 6593,
+  "translated" : false,
+  "cpuType" : "ARM-64",
+  "procLaunch" : "2026-05-26 03:30:53.8792 +0200",
+  "procStartAbsTime" : 35181318327,
+  "procExitAbsTime" : 35204053525,
+  "procName" : "ios-app",
+  "procPath" : "\/Users\/USER\/Library\/Developer\/CoreSimulator\/Devices\/06EB987C-168F-4E14-AF6E-210ED98070A1\/data\/Containers\/Bundle\/Application\/04C00145-411B-4BA0-A187-89089713983D\/ios-app.app\/ios-app",
+  "bundleInfo" : {"CFBundleShortVersionString":"1.0","CFBundleVersion":"1","CFBundleIdentifier":"vego-v3"},
+  "storeInfo" : {"deviceIdentifierForVendor":"D1F036A2-536A-5E9C-9E61-C1E5795A6A26","thirdParty":true},
+  "parentProc" : "launchd_sim",
+  "parentPid" : 5306,
+  "coalitionName" : "com.apple.CoreSimulator.SimDevice.06EB987C-168F-4E14-AF6E-210ED98070A1",
+  "crashReporterKey" : "766AF462-ACAA-8C1E-E071-7CE27CADC04E",
+  "appleIntelligenceStatus" : {"reasons":["notOptedIn"],"state":"unavailable"},
+  "developerMode" : 1,
+  "responsiblePid" : 2452,
+  "responsibleProc" : "SimulatorTrampoline",
+  "codeSigningID" : "vego-v3",
+  "codeSigningTeamID" : "",
+  "codeSigningFlags" : 570425857,
+  "codeSigningValidationCategory" : 10,
+  "codeSigningTrustLevel" : 4294967295,
+  "codeSigningAuxiliaryInfo" : 0,
+  "instructionByteStream" : {"beforePC":"4wAAVP17v6n9AwCRIOP\/l78DAJH9e8GowANf1sADX9YQKYDSARAA1A==","atPC":"4wAAVP17v6n9AwCRFuP\/l78DAJH9e8GowANf1sADX9ZwCoDSARAA1A=="},
+  "bootSessionUUID" : "CE92EC50-6897-4A2B-92C7-6A71146B6DF3",
+  "sip" : "enabled",
+  "exception" : {"codes":"0x0000000000000000, 0x0000000000000000","rawCodes":[0,0],"type":"EXC_CRASH","signal":"SIGABRT"},
+  "termination" : {"flags":0,"code":6,"namespace":"SIGNAL","indicator":"Abort trap: 6","byProc":"ios-app","byPid":6593},
+  "extMods" : {"caller":{"thread_create":0,"thread_set_state":0,"task_for_pid":0},"system":{"thread_create":0,"thread_set_state":0,"task_for_pid":0},"targeted":{"thread_create":0,"thread_set_state":0,"task_for_pid":0},"warnings":0},
+  "faultingThread" : 0,
+  "threads" : [{"triggered":true,"id":63016,"threadState":{"x":[{"value":0},{"value":0},{"value":0},{"value":0},{"value":4320133888},{"value":8568229979205704},{"value":0},{"value":18446726483670988800},{"value":4301299200,"symbolLocation":0,"symbol":"_main_thread"},{"value":9444586645780558530},{"value":2},{"value":4294967293},{"value":0},{"value":0},{"value":0},{"value":0},{"value":328},{"value":4309412208},{"value":0},{"value":6},{"value":259},{"value":4301299424,"symbolLocation":224,"symbol":"_main_thread"},{"value":1},{"value":8384040960,"symbolLocation":8,"symbol":"_MergedGlobals"},{"value":9569153976,"symbolLocation":0,"symbol":"type metadata for ObservationTracking._AccessList"},{"value":4318564736},{"value":6169450608},{"value":6169450624},{"value":6169450640}],"flavor":"ARM_THREAD_STATE64","lr":{"value":4299612984},"cpsr":{"value":1073741824},"fp":{"value":6169446064},"sp":{"value":6169446032},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4297541772,"matchesCrashFrame":1},"far":{"value":0}},"queue":"com.apple.main-thread","frames":[{"imageOffset":34956,"symbol":"__pthread_kill","symbolLocation":8,"imageIndex":4},{"imageOffset":25400,"symbol":"pthread_kill","symbolLocation":264,"imageIndex":5},{"imageOffset":473476,"symbol":"abort","symbolLocation":116,"imageIndex":11},{"imageOffset":17933672,"symbol":"(anonymous namespace)::terminateWithUnhandledException(ObjHeader*)::$_0::operator()() const","symbolLocation":52,"imageIndex":2},{"imageOffset":17933312,"symbol":"void (anonymous namespace)::$_0::operator()<(anonymous namespace)::terminateWithUnhandledException(ObjHeader*)::$_0>((anonymous namespace)::terminateWithUnhandledException(ObjHeader*)::$_0)","symbolLocation":64,"imageIndex":2},{"imageOffset":17932660,"symbol":"(anonymous namespace)::terminateWithUnhandledException(ObjHeader*)","symbolLocation":12,"imageIndex":2},{"imageOffset":17932616,"symbol":"(anonymous namespace)::processUnhandledException(ObjHeader*)","symbolLocation":148,"imageIndex":2},{"imageOffset":17931636,"symbol":"(anonymous namespace)::TerminateHandler::kotlinHandler()","symbolLocation":236,"imageIndex":2},{"imageOffset":67472,"symbol":"std::__terminate(void (*)())","symbolLocation":12,"imageIndex":12},{"imageOffset":79628,"symbol":"__cxxabiv1::failed_throw(__cxxabiv1::__cxa_exception*)","symbolLocation":32,"imageIndex":12},{"imageOffset":79596,"symbol":"__cxa_throw","symbolLocation":88,"imageIndex":12},{"imageOffset":17996608,"symbol":"ExceptionObjHolder::Throw(ObjHeader*)","symbolLocation":64,"imageIndex":2},{"imageOffset":17996544,"symbol":"ThrowException","symbolLocation":12,"imageIndex":2},{"imageOffset":7991820,"symbol":"kfun:androidx.compose.ui.scene.BaseComposeScene#setContent(kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}","symbolLocation":3036,"imageIndex":2},{"imageOffset":16717596,"symbol":"kfun:androidx.compose.ui.scene.ComposeScene#setContent(kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>){}-trampoline","symbolLocation":92,"imageIndex":2},{"imageOffset":8793084,"symbol":"kfun:androidx.compose.ui.scene.ComposeSceneMediator.ComposeSceneMediator$setContent$1.invoke#internal","symbolLocation":256,"imageIndex":2},{"imageOffset":8796544,"symbol":"kfun:androidx.compose.ui.scene.ComposeSceneMediator.ComposeSceneMediator$setContent$1.$<bridge-DN>invoke(){}#internal","symbolLocation":72,"imageIndex":2},{"imageOffset":16166784,"symbol":"kfun:kotlin.Function0#invoke(){}1:0-trampoline","symbolLocation":92,"imageIndex":2},{"imageOffset":9025292,"symbol":"kfun:androidx.compose.ui.window.BackgroundInputView.BackgroundInputView$runOnceOnAppeared$1.invoke#internal","symbolLocation":120,"imageIndex":2},{"imageOffset":9025416,"symbol":"kfun:androidx.compose.ui.window.BackgroundInputView.BackgroundInputView$runOnceOnAppeared$1.$<bridge-DN>invoke(){}#internal","symbolLocation":72,"imageIndex":2},{"imageOffset":16166784,"symbol":"kfun:kotlin.Function0#invoke(){}1:0-trampoline","symbolLocation":92,"imageIndex":2},{"imageOffset":9019464,"symbol":"kfun:androidx.compose.ui.window.BackgroundInputView.runOnAppearedIfEligible#internal","symbolLocation":1240,"imageIndex":2},{"imageOffset":9020044,"symbol":"kfun:androidx.compose.ui.window.BackgroundInputView#objc:layoutSubviews","symbolLocation":248,"imageIndex":2},{"imageOffset":9024020,"symbol":"_6f72672e6a6574627261696e732e636f6d706f73652e75693a75692f6f70742f6275696c644167656e742f776f726b2f346664313831636635653831343836352f636f6d706f73652f75692f75692f7372632f75696b69744d61696e2f6b6f746c696e2f616e64726f6964782f636f6d706f73652f75692f77696e646f772f496e70757456696577732e75696b69742e6b74_49_knbridge1","symbolLocation":144,"imageIndex":2},{"imageOffset":3951988,"imageIndex":13},{"imageOffset":3952924,"imageIndex":13},{"imageOffset":25326920,"symbol":"-[UIView(CALayerDelegate) layoutSublayersOfLayer:]","symbolLocation":2648,"imageIndex":13},{"imageOffset":1914184,"symbol":"CA::Layer::perform_update_(CA::Layer*, CALayer*, unsigned int, CA::LayerUpdateReason, CA::Transaction*)","symbolLocation":456,"imageIndex":14},{"imageOffset":1912212,"symbol":"CA::Layer::update_if_needed_(CA::Transaction*, CA::LayerUpdateReason)","symbolLocation":600,"imageIndex":14},{"imageOffset":1960312,"symbol":"CA::Layer::layout_and_display_if_needed(CA::Transaction*)","symbolLocation":156,"imageIndex":14},{"imageOffset":1010888,"symbol":"CA::Context::commit_transaction(CA::Transaction*, double, double*)","symbolLocation":560,"imageIndex":14},{"imageOffset":1198320,"symbol":"CA::Transaction::commit()","symbolLocation":632,"imageIndex":14},{"imageOffset":19094748,"symbol":"__34-[UIApplication _firstCommitBlock]_block_invoke_2","symbolLocation":32,"imageIndex":13},{"imageOffset":605480,"symbol":"__CFRUNLOOP_IS_CALLING_OUT_TO_A_BLOCK__","symbolLocation":20,"imageIndex":15},{"imageOffset":603316,"symbol":"__CFRunLoopDoBlocks","symbolLocation":340,"imageIndex":15},{"imageOffset":600100,"symbol":"__CFRunLoopRun","symbolLocation":788,"imageIndex":15},{"imageOffset":579844,"symbol":"_CFRunLoopRunSpecificWithOptions","symbolLocation":496,"imageIndex":15},{"imageOffset":10688,"symbol":"GSEventRunModal","symbolLocation":116,"imageIndex":16},{"imageOffset":18990284,"symbol":"-[UIApplication _run]","symbolLocation":776,"imageIndex":13},{"imageOffset":26306832,"symbol":"UIApplicationMain","symbolLocation":120,"imageIndex":13},{"imageOffset":8109988,"symbol":"closure #1 in KitRendererCommon(_:)","symbolLocation":164,"imageIndex":17},{"imageOffset":8109336,"symbol":"runApp<A>(_:)","symbolLocation":180,"imageIndex":17},{"imageOffset":5558420,"symbol":"static App.main()","symbolLocation":148,"imageIndex":17},{"imageOffset":8560,"sourceFile":"\/<compiler-generated>","symbol":"static iosApp.$main()","symbolLocation":40,"imageIndex":2},{"imageOffset":8728,"sourceFile":"iosApp.swift","symbol":"__debug_main_executable_dylib_entry_point","symbolLocation":12,"imageIndex":2},{"imageOffset":45284,"symbol":"start_sim","symbolLocation":20,"imageIndex":1},{"imageOffset":130560,"symbol":"start","symbolLocation":6992,"imageIndex":10}]},{"id":63032,"name":"GC Timer thread","threadState":{"x":[{"value":260},{"value":0},{"value":0},{"value":0},{"value":0},{"value":160},{"value":9},{"value":999804458},{"value":6170029320},{"value":0},{"value":0},{"value":2},{"value":2},{"value":0},{"value":0},{"value":0},{"value":305},{"value":0},{"value":0},{"value":4309413000},{"value":4309413064},{"value":6170030304},{"value":999804458},{"value":9},{"value":0},{"value":1},{"value":256},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":4299614976},"cpsr":{"value":1610612736},"fp":{"value":6170029440},"sp":{"value":6170029296},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4297523244},"far":{"value":0}},"frames":[{"imageOffset":16428,"symbol":"__psynch_cvwait","symbolLocation":8,"imageIndex":4},{"imageOffset":27392,"symbol":"_pthread_cond_wait","symbolLocation":972,"imageIndex":5},{"imageOffset":132760,"symbol":"std::__1::condition_variable::__do_timed_wait(std::__1::unique_lock<std::__1::mutex>&, std::__1::chrono::time_point<std::__1::chrono::system_clock, std::__1::chrono::duration<long long, std::__1::ratio<1l, 1000000000l>>>)","symbolLocation":100,"imageIndex":19},{"imageOffset":17920652,"symbol":"bool std::__1::condition_variable::wait_for[abi:ne200100]<long long, std::__1::ratio<1l, 1000000000l>, void kotlin::RepeatedTimer<kotlin::steady_clock>::Run<kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()>(kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&)::'lambda'()>(std::__1::unique_lock<std::__1::mutex>&, std::__1::chrono::duration<kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'(), std::__1::ratio<1l, 1000000000l>> const&, void kotlin::RepeatedTimer<kotlin::steady_clock>::Run<kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()>(kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&)::'lambda'())","symbolLocation":352,"imageIndex":2},{"imageOffset":17917616,"symbol":"void kotlin::RepeatedTimer<kotlin::steady_clock>::Run<kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()>(kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&)","symbolLocation":252,"imageIndex":2},{"imageOffset":17919704,"symbol":"void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(kotlin::ScopedThread::attributes, void (*&&)(void (kotlin::RepeatedTimer<kotlin::steady_clock>::*&&)(kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&) noexcept, kotlin::RepeatedTimer<kotlin::steady_clock>*&&, kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&), void (kotlin::RepeatedTimer<kotlin::steady_clock>::*&&)(kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&) noexcept, kotlin::RepeatedTimer<kotlin::steady_clock>*&&, kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&), kotlin::ScopedThread::attributes, void (*)(void (kotlin::RepeatedTimer<kotlin::steady_clock>::*&&)(kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&) noexcept, kotlin::RepeatedTimer<kotlin::steady_clock>*&&, kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&), void (kotlin::RepeatedTimer<kotlin::steady_clock>::*)(kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()&&) noexcept, kotlin::RepeatedTimer<kotlin::steady_clock>*, kotlin::gcScheduler::internal::GCSchedulerDataAdaptive<kotlin::steady_clock>::GCSchedulerDataAdaptive(kotlin::gcScheduler::GCSchedulerConfig&, std::__1::function<long long ()>)::'lambda'()>>(void*)","symbolLocation":232,"imageIndex":2},{"imageOffset":26172,"symbol":"_pthread_start","symbolLocation":104,"imageIndex":5},{"imageOffset":6708,"symbol":"thread_start","symbolLocation":8,"imageIndex":5}]},{"id":63033,"name":"Main GC thread","threadState":{"x":[{"value":260},{"value":0},{"value":0},{"value":0},{"value":0},{"value":160},{"value":0},{"value":0},{"value":6170602920},{"value":0},{"value":0},{"value":2},{"value":2},{"value":0},{"value":0},{"value":0},{"value":305},{"value":0},{"value":0},{"value":4324327424},{"value":4324327632},{"value":6170603744},{"value":0},{"value":0},{"value":0},{"value":1},{"value":256},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":4299614976},"cpsr":{"value":1610612736},"fp":{"value":6170603040},"sp":{"value":6170602896},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4297523244},"far":{"value":0}},"frames":[{"imageOffset":16428,"symbol":"__psynch_cvwait","symbolLocation":8,"imageIndex":4},{"imageOffset":27392,"symbol":"_pthread_cond_wait","symbolLocation":972,"imageIndex":5},{"imageOffset":132612,"symbol":"std::__1::condition_variable::wait(std::__1::unique_lock<std::__1::mutex>&)","symbolLocation":28,"imageIndex":19},{"imageOffset":17878536,"symbol":"kotlin::gc::internal::MainGCThread<kotlin::gc::internal::PmcsGCTraits>::body()","symbolLocation":220,"imageIndex":2},{"imageOffset":17877720,"symbol":"void* std::__1::__thread_proxy[abi:ne200100]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(kotlin::ScopedThread::attributes, void (*&&)(kotlin::gc::internal::MainGCThread<kotlin::gc::internal::PmcsGCTraits>::MainGCThread(GCStateHolder&, kotlin::alloc::Allocator&, kotlin::gcScheduler::GCScheduler&, kotlin::gc::mark::ParallelMark&)::'lambda'()&&), kotlin::gc::internal::MainGCThread<kotlin::gc::internal::PmcsGCTraits>::MainGCThread(GCStateHolder&, kotlin::alloc::Allocator&, kotlin::gcScheduler::GCScheduler&, kotlin::gc::mark::ParallelMark&)::'lambda'()&&), kotlin::ScopedThread::attributes, void (*)(kotlin::gc::internal::MainGCThread<kotlin::gc::internal::PmcsGCTraits>::MainGCThread(GCStateHolder&, kotlin::alloc::Allocator&, kotlin::gcScheduler::GCScheduler&, kotlin::gc::mark::ParallelMark&)::'lambda'()&&), kotlin::gc::internal::MainGCThread<kotlin::gc::internal::PmcsGCTraits>::MainGCThread(GCStateHolder&, kotlin::alloc::Allocator&, kotlin::gcScheduler::GCScheduler&, kotlin::gc::mark::ParallelMark&)::'lambda'()>>(void*)","symbolLocation":208,"imageIndex":2},{"imageOffset":26172,"symbol":"_pthread_start","symbolLocation":104,"imageIndex":5},{"imageOffset":6708,"symbol":"thread_start","symbolLocation":8,"imageIndex":5}]},{"id":63034,"frames":[],"threadState":{"x":[{"value":6171176960},{"value":5123},{"value":6170640384},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6171176960},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63035,"frames":[],"threadState":{"x":[{"value":6171750400},{"value":6147},{"value":6171213824},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6171750400},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63036,"frames":[],"threadState":{"x":[{"value":6172323840},{"value":5635},{"value":6171787264},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6172323840},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63037,"frames":[],"threadState":{"x":[{"value":6172897280},{"value":10243},{"value":6172360704},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6172897280},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63038,"name":"com.apple.uikit.eventfetch-thread","threadState":{"x":[{"value":268451845},{"value":21592279046},{"value":8589934592},{"value":68182605824000},{"value":2162692},{"value":68182605824000},{"value":2},{"value":4294967295},{"value":0},{"value":17179869184},{"value":0},{"value":2},{"value":0},{"value":0},{"value":15875},{"value":3072},{"value":18446744073709551569},{"value":18446744072367376383},{"value":0},{"value":4294967295},{"value":2},{"value":68182605824000},{"value":2162692},{"value":68182605824000},{"value":21592279046},{"value":6173465992},{"value":8589934592},{"value":18446744073709550527},{"value":4297785344,"symbolLocation":0,"symbol":"_libkernel_string_functions"}],"flavor":"ARM_THREAD_STATE64","lr":{"value":4297580124},"cpsr":{"value":0},"fp":{"value":6173465840},"sp":{"value":6173465760},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4297509744},"far":{"value":0}},"frames":[{"imageOffset":2928,"symbol":"mach_msg2_trap","symbolLocation":8,"imageIndex":4},{"imageOffset":73308,"symbol":"mach_msg2_internal","symbolLocation":72,"imageIndex":4},{"imageOffset":35908,"symbol":"mach_msg_overwrite","symbolLocation":484,"imageIndex":4},{"imageOffset":3824,"symbol":"mach_msg","symbolLocation":20,"imageIndex":4},{"imageOffset":604096,"symbol":"__CFRunLoopServiceMachPort","symbolLocation":156,"imageIndex":15},{"imageOffset":600440,"symbol":"__CFRunLoopRun","symbolLocation":1128,"imageIndex":15},{"imageOffset":579844,"symbol":"_CFRunLoopRunSpecificWithOptions","symbolLocation":496,"imageIndex":15},{"imageOffset":9370188,"symbol":"-[NSRunLoop(NSRunLoop) runMode:beforeDate:]","symbolLocation":208,"imageIndex":20},{"imageOffset":9370728,"symbol":"-[NSRunLoop(NSRunLoop) runUntilDate:]","symbolLocation":60,"imageIndex":20},{"imageOffset":16050900,"symbol":"-[UIEventFetcher threadMain]","symbolLocation":404,"imageIndex":13},{"imageOffset":9522908,"symbol":"__NSThread__start__","symbolLocation":716,"imageIndex":20},{"imageOffset":26172,"symbol":"_pthread_start","symbolLocation":104,"imageIndex":5},{"imageOffset":6708,"symbol":"thread_start","symbolLocation":8,"imageIndex":5}]},{"id":63039,"frames":[],"threadState":{"x":[{"value":6174044160},{"value":13571},{"value":6173507584},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6174044160},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63041,"frames":[],"threadState":{"x":[{"value":6174617600},{"value":17667},{"value":6174081024},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6174617600},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63042,"frames":[],"threadState":{"x":[{"value":6175191040},{"value":19203},{"value":6174654464},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6175191040},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63043,"frames":[],"threadState":{"x":[{"value":6175764480},{"value":17923},{"value":6175227904},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6175764480},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63044,"frames":[],"threadState":{"x":[{"value":6176337920},{"value":18947},{"value":6175801344},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6176337920},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63045,"frames":[],"threadState":{"x":[{"value":6176911360},{"value":18179},{"value":6176374784},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6176911360},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63046,"frames":[],"threadState":{"x":[{"value":6177484800},{"value":18691},{"value":6176948224},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6177484800},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63047,"frames":[],"threadState":{"x":[{"value":6178058240},{"value":21763},{"value":6177521664},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6178058240},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63048,"frames":[],"threadState":{"x":[{"value":6178631680},{"value":22019},{"value":6178095104},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6178631680},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63049,"frames":[],"threadState":{"x":[{"value":6179205120},{"value":32515},{"value":6178668544},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6179205120},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63050,"frames":[],"threadState":{"x":[{"value":6179778560},{"value":22275},{"value":6179241984},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6179778560},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63051,"frames":[],"threadState":{"x":[{"value":6180352000},{"value":32259},{"value":6179815424},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6180352000},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63052,"frames":[],"threadState":{"x":[{"value":6180925440},{"value":22531},{"value":6180388864},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6180925440},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63053,"frames":[],"threadState":{"x":[{"value":6181498880},{"value":32003},{"value":6180962304},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6181498880},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63054,"frames":[],"threadState":{"x":[{"value":6182072320},{"value":22787},{"value":6181535744},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6182072320},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63055,"frames":[],"threadState":{"x":[{"value":6182645760},{"value":23043},{"value":6182109184},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6182645760},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63056,"frames":[],"threadState":{"x":[{"value":6183219200},{"value":0},{"value":6182682624},{"value":0},{"value":278532},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6183219200},"esr":{"value":0},"pc":{"value":4299594272},"far":{"value":0}}},{"id":63057,"frames":[{"imageOffset":16428,"symbol":"__psynch_cvwait","symbolLocation":8,"imageIndex":4},{"imageOffset":27392,"symbol":"_pthread_cond_wait","symbolLocation":972,"imageIndex":5},{"imageOffset":18054568,"symbol":"(anonymous namespace)::waitInNativeState(_opaque_pthread_cond_t*, _opaque_pthread_mutex_t*)","symbolLocation":80,"imageIndex":2},{"imageOffset":18051048,"symbol":"Worker::processQueueElement(bool)","symbolLocation":700,"imageIndex":2},{"imageOffset":18050104,"symbol":"(anonymous namespace)::workerRoutine(void*)","symbolLocation":200,"imageIndex":2},{"imageOffset":26172,"symbol":"_pthread_start","symbolLocation":104,"imageIndex":5},{"imageOffset":6708,"symbol":"thread_start","symbolLocation":8,"imageIndex":5}],"threadState":{"x":[{"value":260},{"value":0},{"value":0},{"value":0},{"value":0},{"value":160},{"value":0},{"value":0},{"value":6183791224},{"value":0},{"value":0},{"value":2},{"value":2},{"value":0},{"value":0},{"value":0},{"value":305},{"value":4318134720},{"value":0},{"value":4318136152},{"value":4318136216},{"value":6183792864},{"value":0},{"value":0},{"value":0},{"value":1},{"value":256},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":4299614976},"cpsr":{"value":1610612736},"fp":{"value":6183791344},"sp":{"value":6183791200},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":4297523244},"far":{"value":0}}}],
+  "usedImages" : [
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4297408512,
+    "CFBundleShortVersionString" : "1.0",
+    "CFBundleIdentifier" : "vego-v3",
+    "size" : 16384,
+    "uuid" : "9e2e3298-c8e2-3410-ad63-181c5caf15ce",
+    "path" : "\/Users\/USER\/Library\/Developer\/CoreSimulator\/Devices\/06EB987C-168F-4E14-AF6E-210ED98070A1\/data\/Containers\/Bundle\/Application\/04C00145-411B-4BA0-A187-89089713983D\/ios-app.app\/ios-app",
+    "name" : "ios-app",
+    "CFBundleVersion" : "1"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4298129408,
+    "size" : 327680,
+    "uuid" : "ba544d9a-46ab-3c59-a00f-aba1479d2079",
+    "path" : "\/Volumes\/VOLUME\/*\/dyld_sim",
+    "name" : "dyld_sim"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4361453568,
+    "size" : 32604160,
+    "uuid" : "ed3d9d5f-c209-3067-92ef-0d5a9cefb9ee",
+    "path" : "\/Users\/USER\/Library\/Developer\/CoreSimulator\/Devices\/06EB987C-168F-4E14-AF6E-210ED98070A1\/data\/Containers\/Bundle\/Application\/04C00145-411B-4BA0-A187-89089713983D\/ios-app.app\/ios-app.debug.dylib",
+    "name" : "ios-app.debug.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4298899456,
+    "size" : 49152,
+    "uuid" : "0831b8d2-190f-31fc-9eb6-ea8ba11fe47b",
+    "path" : "\/usr\/lib\/system\/libsystem_platform.dylib",
+    "name" : "libsystem_platform.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4297506816,
+    "size" : 245760,
+    "uuid" : "856091df-df82-3985-9695-28eac306bcb5",
+    "path" : "\/usr\/lib\/system\/libsystem_kernel.dylib",
+    "name" : "libsystem_kernel.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4299587584,
+    "size" : 65536,
+    "uuid" : "1e522024-387b-3d18-81ca-f4559198954b",
+    "path" : "\/usr\/lib\/system\/libsystem_pthread.dylib",
+    "name" : "libsystem_pthread.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4309041152,
+    "size" : 49152,
+    "uuid" : "75fa6778-178f-394f-9c63-711780430596",
+    "path" : "\/Volumes\/VOLUME\/*\/libobjc-trampolines.dylib",
+    "name" : "libobjc-trampolines.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4333961216,
+    "CFBundleShortVersionString" : "373.2",
+    "CFBundleIdentifier" : "com.apple.MTLSimDriver",
+    "size" : 229376,
+    "uuid" : "8339ca77-3986-3588-9df9-8b8d511ae608",
+    "path" : "\/Volumes\/VOLUME\/*\/MTLSimDriver.framework\/MTLSimDriver",
+    "name" : "MTLSimDriver",
+    "CFBundleVersion" : "373.2"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4334551040,
+    "CFBundleShortVersionString" : "1.0",
+    "CFBundleIdentifier" : "com.apple.gpusw.MetalSerializer",
+    "size" : 196608,
+    "uuid" : "19460939-4bce-3e8d-8868-5388dd78ace3",
+    "path" : "\/Volumes\/VOLUME\/*\/MetalSerializer.framework\/MetalSerializer",
+    "name" : "MetalSerializer",
+    "CFBundleVersion" : "1"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4342005760,
+    "CFBundleIdentifier" : "com.apple.dyld.dyld-framework",
+    "size" : 376832,
+    "uuid" : "5388c6c4-c09d-351e-85e6-794aeb77c3a9",
+    "path" : "\/Volumes\/VOLUME\/*\/Dyld.framework\/Dyld",
+    "name" : "Dyld",
+    "CFBundleVersion" : "1"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64e",
+    "base" : 4300537856,
+    "size" : 688128,
+    "uuid" : "a237ef81-b68b-37ba-a165-92c965529534",
+    "path" : "\/usr\/lib\/dyld",
+    "name" : "dyld"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 6443532288,
+    "size" : 508600,
+    "uuid" : "05f4b01b-e685-39fa-93f3-de10cd9b511a",
+    "path" : "\/Volumes\/VOLUME\/*\/libsystem_c.dylib",
+    "name" : "libsystem_c.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 6445326336,
+    "size" : 100064,
+    "uuid" : "ca04d801-3e4b-3a57-aead-0a5eb2db0671",
+    "path" : "\/Volumes\/VOLUME\/*\/libc++abi.dylib",
+    "name" : "libc++abi.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 6528995328,
+    "CFBundleShortVersionString" : "1.0",
+    "CFBundleIdentifier" : "com.apple.UIKitCore",
+    "size" : 36620096,
+    "uuid" : "12463677-be34-38f7-9e11-3421bbf362fc",
+    "path" : "\/Volumes\/VOLUME\/*\/UIKitCore.framework\/UIKitCore",
+    "name" : "UIKitCore",
+    "CFBundleVersion" : "9126.5.5.2.103"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 6658277376,
+    "CFBundleShortVersionString" : "1195.14.4",
+    "CFBundleIdentifier" : "com.apple.QuartzCore",
+    "size" : 3322048,
+    "uuid" : "8be360df-f68a-37c7-99ee-ddaf3da9a99f",
+    "path" : "\/Volumes\/VOLUME\/*\/QuartzCore.framework\/QuartzCore",
+    "name" : "QuartzCore",
+    "CFBundleVersion" : "1195.14.4"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 6446182400,
+    "CFBundleShortVersionString" : "6.9",
+    "CFBundleIdentifier" : "com.apple.CoreFoundation",
+    "size" : 4396288,
+    "uuid" : "e74d7b62-0aac-3013-a55b-f15135d4bd2e",
+    "path" : "\/Volumes\/VOLUME\/*\/CoreFoundation.framework\/CoreFoundation",
+    "name" : "CoreFoundation",
+    "CFBundleVersion" : "5026.5.4"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 6764720128,
+    "CFBundleShortVersionString" : "1.0",
+    "CFBundleIdentifier" : "com.apple.GraphicsServices",
+    "size" : 32160,
+    "uuid" : "95c64786-b053-33db-914f-5fa4b6cb8122",
+    "path" : "\/Volumes\/VOLUME\/*\/GraphicsServices.framework\/GraphicsServices",
+    "name" : "GraphicsServices",
+    "CFBundleVersion" : "1.0"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 7825596416,
+    "CFBundleShortVersionString" : "7.5.3",
+    "CFBundleIdentifier" : "com.apple.SwiftUI",
+    "size" : 18512544,
+    "uuid" : "2332ef71-3e29-3e60-9849-acdd69b6b8ef",
+    "path" : "\/Volumes\/VOLUME\/*\/SwiftUI.framework\/SwiftUI",
+    "name" : "SwiftUI",
+    "CFBundleVersion" : "7.5.3"
+  },
+  {
+    "size" : 0,
+    "source" : "A",
+    "base" : 0,
+    "uuid" : "00000000-0000-0000-0000-000000000000"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 6445465600,
+    "size" : 561312,
+    "uuid" : "fd646c4c-99c5-3828-8199-3a66a48ff1a1",
+    "path" : "\/Volumes\/VOLUME\/*\/libc++.1.dylib",
+    "name" : "libc++.1.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 6451101696,
+    "CFBundleShortVersionString" : "6.9",
+    "CFBundleIdentifier" : "com.apple.Foundation",
+    "size" : 14388704,
+    "uuid" : "2cc9fce0-08f9-3a0d-8a2f-6db229462de5",
+    "path" : "\/Volumes\/VOLUME\/*\/Foundation.framework\/Foundation",
+    "name" : "Foundation",
+    "CFBundleVersion" : "5026.5.4"
+  }
+],
+  "sharedCache" : {
+  "base" : 6442450944,
+  "size" : 3385917440,
+  "uuid" : "7c1b744f-99c5-35d6-ac63-2adb0573ae3e"
+},
+  "vmSummary" : "ReadOnly portion of Libraries: Total=1.7G resident=0K(0%) swapped_out_or_unallocated=1.7G(100%)\nWritable regions: Total=87.2M written=1602K(2%) resident=1602K(2%) swapped_out=0K(0%) unallocated=85.7M(98%)\n\n                                VIRTUAL   REGION \nREGION TYPE                        SIZE    COUNT (non-coalesced) \n===========                     =======  ======= \nActivity Tracing                   256K        1 \nAttributeGraph Data               1024K        1 \nCoreAnimation                       16K        1 \nFoundation                          16K        1 \nKernel Alloc Once                   32K        1 \nMALLOC                            49.0M       18 \nMALLOC guard page                 4048K        4 \nMemory Tag 246                    13.5M      103 \nSTACK GUARD                       56.4M       26 \nStack                             21.3M       26 \nVM_ALLOCATE                         32K        1 \n__AUTH_CONST                        32K        1 \n__DATA                            45.6M      786 \n__DATA_CONST                     104.5M      812 \n__DATA_DIRTY                       155K       14 \n__FONT_DATA                        2352        1 \n__LINKEDIT                       729.4M       12 \n__OBJC_RO                         55.6M        1 \n__OBJC_RW                         2332K        1 \n__TEXT                             1.0G      825 \n__TPRO_CONST                       164K        3 \ndyld private memory                3.0G       15 \nmapped file                      107.0M       10 \npage table in kernel              1602K        1 \nshared memory                       16K        1 \n===========                     =======  ======= \nTOTAL                              5.1G     2666 \n",
+  "legacyInfo" : {
+  "threadTriggered" : {
+    "queue" : "com.apple.main-thread"
+  }
+},
+  "logWritingSignature" : "98c8f42bf432b8a857c3ae142dd42fe977d9935d",
+  "bug_type" : "309",
+  "roots_installed" : 0,
+  "trmStatus" : 1,
+  "trialInfo" : {
+  "rollouts" : [
+    {
+      "rolloutId" : "642da32dea3b2418c750f848",
+      "factorPackIds" : [
+        "66d8b2f77cd4b62688efd2cf"
+      ],
+      "deploymentId" : 240000011
+    },
+    {
+      "rolloutId" : "695fd05d8ca5554688521e5e",
+      "factorPackIds" : [
+        "695fd08781fcd20ded79c1d3",
+        "695fd0d28ca5554688521e5f",
+        "695fd09c8774dc09015a80e9",
+        "695fd0b18774dc09015a80ea"
+      ],
+      "deploymentId" : 3
+    }
+  ],
+  "experiments" : [
+
+  ]
+}
+}

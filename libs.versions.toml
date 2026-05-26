@@ -1,5 +1,7 @@
 [versions]
 koin-bom = "4.2.1"
+ktor-bom = "3.5.0"
+oidc = "0.16.5"
 
 [libraries]
 #Koin
@@ -12,6 +14,16 @@ koin-test = { module = "io.insert-koin:koin-test" }
 koin-compose = { module = "io.insert-koin:koin-compose" }
 koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel" }
 koin-compose-navigation = { module = "io.insert-koin:koin-compose-navigation3" }
-
-#Koin Ktor
 koin-ktor = { module = "io.insert-koin:koin-ktor" }
+
+# Ktor
+ktor-bom = { module = "io.ktor:ktor-bom", version.ref = "ktor-bom" }
+ktor-client-core = { module = "io.ktor:ktor-client-core" }
+ktor-client-android = { module = "io.ktor:ktor-client-android" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin" }
+ktor-client-auth = { module = "io.ktor:ktor-client-auth" }
+
+# Client Oidc
+oidc-appsupport = { module = "io.github.kalinjul.kotlin.multiplatform:oidc-appsupport", version.ref = "oidc" }
+oidc-okhttp4 = { module = "io.github.kalinjul.kotlin.multiplatform:oidc-okhttp4", version.ref = "oidc" }
+oidc-ktor = { module = "io.github.kalinjul.kotlin.multiplatform:oidc-ktor", version.ref = "oidc" }

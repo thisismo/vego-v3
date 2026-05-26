@@ -4,3 +4,10 @@ product:
 
 apply:
   - ../../build-utils/client.module-template.yaml
+
+dependencies:
+  - $libs.oidc.appsupport
+  - $libs.oidc.ktor
+
+dependencies@android:
+  - $libs.oidc.okhttp4
