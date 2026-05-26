@@ -9,3 +9,5 @@ settings:
     serialization:
       format: json
       version: 1.11.0
+    optIns: [ kotlin.uuid.ExperimentalUuidApi ]
+    rpc: enabled

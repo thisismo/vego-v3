@@ -1,0 +1,10 @@
+product:
+  type: jvm/lib
+
+apply:
+  - ../../build-utils/server.module-template.yaml
+
+dependencies:
+  - ../../identity/identity-common
+  - $ktor.server.auth
+  - $ktor.server.auth.jwt

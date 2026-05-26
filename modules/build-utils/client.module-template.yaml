@@ -13,7 +13,6 @@ dependencies:
 dependencies@ios:
   - $libs.ktor.client.darwin: exported
 
-
 dependencies@android:
   - $libs.koin.android: exported
   - $libs.ktor.client.android: exported

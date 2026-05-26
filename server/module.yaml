@@ -1,4 +1,11 @@
 product: jvm/app
+
+apply:
+  - ../modules/build-utils/server.module-template.yaml
+
 dependencies:
-  - bom: $libs.koin.bom
-  - $libs.koin.ktor
+  - ../modules/identity/identity-server
+
+settings:
+  jvm:
+    mainClass: io.thisismo.vego.server.MainKt

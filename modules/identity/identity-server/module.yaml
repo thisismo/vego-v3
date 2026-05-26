@@ -1,0 +1,7 @@
+product: jvm/lib
+
+apply:
+  - ../../build-utils/server.module-template.yaml
+
+dependencies:
+  - ../../common/server-auth
