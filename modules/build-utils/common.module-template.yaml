@@ -2,6 +2,7 @@ dependencies:
   - bom: $libs.koin.bom
   - $libs.koin.core
   - $libs.koin.test
+  - $libs.logging.kermit
 
 settings:
   kotlin:

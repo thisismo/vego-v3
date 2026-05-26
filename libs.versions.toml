@@ -2,6 +2,7 @@
 koin-bom = "4.2.1"
 ktor-bom = "3.5.0"
 oidc = "0.16.5"
+kermit = "2.0.4"
 
 [libraries]
 #Koin
@@ -27,3 +28,6 @@ ktor-client-auth = { module = "io.ktor:ktor-client-auth" }
 oidc-appsupport = { module = "io.github.kalinjul.kotlin.multiplatform:oidc-appsupport", version.ref = "oidc" }
 oidc-okhttp4 = { module = "io.github.kalinjul.kotlin.multiplatform:oidc-okhttp4", version.ref = "oidc" }
 oidc-ktor = { module = "io.github.kalinjul.kotlin.multiplatform:oidc-ktor", version.ref = "oidc" }
+
+# Kermit Logger
+logging-kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }

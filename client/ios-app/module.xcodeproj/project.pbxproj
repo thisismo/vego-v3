@@ -158,7 +158,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				INFOPLIST_FILE = src/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
-				KOTLIN_CLI_WRAPPER_PATH = ../kotlin;
+				KOTLIN_CLI_WRAPPER_PATH = ../../kotlin;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -202,7 +202,7 @@
 				);
 				INFOPLIST_FILE = src/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
-				KOTLIN_CLI_WRAPPER_PATH = ../kotlin;
+				KOTLIN_CLI_WRAPPER_PATH = ../../kotlin;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
