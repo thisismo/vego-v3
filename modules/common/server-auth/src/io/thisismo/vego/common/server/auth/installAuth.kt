@@ -5,9 +5,12 @@ import com.auth0.jwk.JwkProviderBuilder
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
+import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.jwt.jwt
+import io.thisismo.vego.identity.common.UserId
 import java.net.URI
 import java.util.concurrent.TimeUnit
+import kotlin.uuid.Uuid
 
 const val jwksUri = "http://localhost:8080/realms/vegoapp/protocol/openid-connect/certs"
 val trustedIssuers = listOf(
@@ -27,6 +30,13 @@ fun Application.installAuth() {
         jwt("jwt-auth") {
             verifier(keycloakJwkProvider) {
                 withIssuer(*trustedIssuers.toTypedArray())
+            }
+            validate { credential ->
+                if (credential.payload.getClaim("sub").asString() != "") {
+                    JWTPrincipal(credential.payload)
+                } else {
+                    null
+                }
             }
         }
     }

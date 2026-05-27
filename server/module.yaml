@@ -5,6 +5,7 @@ apply:
 
 dependencies:
   - ../modules/identity/identity-server
+  - ../modules/common/server-auth
 
 settings:
   jvm:

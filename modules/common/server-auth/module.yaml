@@ -6,5 +6,5 @@ apply:
 
 dependencies:
   - ../../identity/identity-common
-  - $ktor.server.auth
-  - $ktor.server.auth.jwt
+  - $ktor.server.auth: exported
+  - $ktor.server.auth.jwt: exported

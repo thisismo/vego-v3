@@ -12,5 +12,6 @@ fun Routing.requireAuth(block: Routing.() -> Unit) {
     }
 }
 
-val ApplicationCall.userId: UserId
-    get() = principal<UserId>() ?: error("User not authenticated")
+data class UserPrincipal(
+    val userId: UserId
+)

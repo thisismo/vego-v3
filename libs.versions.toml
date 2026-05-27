@@ -3,6 +3,7 @@ koin-bom = "4.2.1"
 ktor-bom = "3.5.0"
 oidc = "0.16.5"
 kermit = "2.1.0"
+logback = "1.5.18"
 
 [libraries]
 # Koin
@@ -23,6 +24,7 @@ ktor-client-core = { module = "io.ktor:ktor-client-core" }
 ktor-client-android = { module = "io.ktor:ktor-client-android" }
 ktor-client-darwin = { module = "io.ktor:ktor-client-darwin" }
 ktor-client-auth = { module = "io.ktor:ktor-client-auth" }
+ktor-client-logging = { module = "io.ktor:ktor-client-logging" }
 
 # Client Oidc
 oidc-appsupport = { module = "io.github.kalinjul.kotlin.multiplatform:oidc-appsupport", version.ref = "oidc" }
@@ -31,3 +33,6 @@ oidc-ktor = { module = "io.github.kalinjul.kotlin.multiplatform:oidc-ktor", vers
 
 # Kermit Logger
 logging-kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+
+# Logback (SLF4J provider for JVM server)
+logging-logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
