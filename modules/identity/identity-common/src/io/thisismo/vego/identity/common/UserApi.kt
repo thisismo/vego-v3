@@ -4,6 +4,6 @@ import kotlinx.rpc.annotations.Rpc
 
 @Rpc
 interface UserApi {
-    suspend fun getUserById(userId: UserId): User?
+    suspend fun getUserById(userId: UserId): UserResponse?
     suspend fun createUser(dietaryPreference: DietaryPreference): UserId
 }

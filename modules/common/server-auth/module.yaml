@@ -7,4 +7,4 @@ apply:
 dependencies:
   - ../../identity/identity-common
   - $ktor.server.auth
-  - $ktor.server.auth.jwt
+  - $ktor.server.sessions

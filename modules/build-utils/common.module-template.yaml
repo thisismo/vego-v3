@@ -3,6 +3,7 @@ dependencies:
   - $libs.koin.core
   - $libs.koin.test
   - $libs.logging.kermit
+  - $kotlin.serialization.json
 
 settings:
   kotlin:

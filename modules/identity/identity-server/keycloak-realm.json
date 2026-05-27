@@ -1,0 +1,23 @@
+{
+  "realm": "vegoapp",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "vego-identity",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "mysecret",
+      "redirectUris": [
+        "http://localhost:8080/*",
+        "vego-v3://*"
+      ],
+      "webOrigins": [
+        ""
+      ],
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "frontchannelLogout": true
+    }
+  ]
+}

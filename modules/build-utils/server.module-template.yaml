@@ -8,6 +8,7 @@ dependencies:
   - $ktor.serialization.kotlinx
   - $ktor.serialization.kotlinx.json
   - $kotlin.rpc.krpc.ktor.server
+  - $kotlin.rpc.krpc.serialization.json
 
 settings:
   ktor:
