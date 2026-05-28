@@ -18,11 +18,21 @@ interface SessionState {
     data object Authenticated : SessionState
 }
 
+/**
+ * Narrow contract for "the place that receives a session token from the
+ * identity-callback deeplink". Exists primarily so the deeplink layer doesn't
+ * have to depend on the full [SessionManager] (and its OIDC/network graph)
+ * and can be exercised with a fake in unit tests.
+ */
+interface SessionTokenReceiver {
+    fun onSessionTokenReceived(sessionToken: String)
+}
+
 class SessionManager(
     private val authService: OidcAuthService,
     private val networkMonitor: NetworkMonitor,
     private val backendReachability: BackendReachability,
-) {
+) : SessionTokenReceiver {
     private val log = Logger.withTag("SessionManager")
     private val _sessionState = MutableStateFlow<SessionState>(SessionState.Restoring)
 
@@ -40,6 +50,21 @@ class SessionManager(
         }
         _sessionState.update { SessionState.Authenticated }
         log.i("Login successful")
+    }
+
+    /**
+     * Called by the deeplink layer when the identity server has redirected back
+     * into the app with a freshly issued session token. Promotes the session to
+     * [SessionState.Authenticated]. The token itself is currently only logged;
+     * persistence will be handled once a dedicated token store API lands.
+     */
+    override fun onSessionTokenReceived(sessionToken: String) {
+        if (sessionToken.isEmpty()) {
+            log.w("Ignoring empty session token from identity callback")
+            return
+        }
+        log.i("Session token received via identity callback (len=${sessionToken.length})")
+        _sessionState.update { SessionState.Authenticated }
     }
 
     suspend fun restoreSessionOffline() {

@@ -22,5 +22,16 @@
 	<string>1</string>
 	<key>UILaunchScreen</key>
 	<dict/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>io.thisismo.vego</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>vego-v3</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

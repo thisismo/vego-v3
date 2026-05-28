@@ -23,6 +23,9 @@ struct iosApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onOpenURL { url in
+                    DeeplinkBridgeKt.handleDeeplink(uri: url.absoluteString)
+                }
         }
     }
 }

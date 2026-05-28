@@ -10,6 +10,8 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.thisismo.vego.identity.server.identityModule
+import kotlinx.rpc.krpc.ktor.server.Krpc
+import kotlinx.rpc.krpc.serialization.json.json
 import org.koin.ktor.plugin.Koin
 
 fun main() {
@@ -19,6 +21,11 @@ fun main() {
 
 fun Application.module() {
     install(Koin)
+    install(Krpc) {
+        serialization {
+            json()
+        }
+    }
     identityModule(true)
     Logger.i("Started Vego server on port 8080")
 }

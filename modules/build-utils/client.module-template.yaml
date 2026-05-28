@@ -9,6 +9,8 @@ dependencies:
   - bom: $libs.ktor.bom
   - $libs.ktor.client.core: exported
   - $libs.ktor.client.auth
+  - $kotlin.rpc.krpc.ktor.client
+  - $kotlin.rpc.krpc.serialization.json
 
 dependencies@ios:
   - $libs.ktor.client.darwin: exported

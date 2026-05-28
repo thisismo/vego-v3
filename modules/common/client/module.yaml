@@ -8,6 +8,7 @@ apply:
 dependencies:
   - $libs.oidc.appsupport
   - $libs.oidc.ktor
+  - ../../identity/identity-common-client
 
 dependencies@android:
   - $libs.oidc.okhttp4

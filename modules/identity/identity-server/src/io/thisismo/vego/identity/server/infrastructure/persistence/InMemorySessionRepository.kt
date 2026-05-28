@@ -1,5 +1,6 @@
 package io.thisismo.vego.identity.server.infrastructure.persistence
 
+import InMemoryRepository
 import io.thisismo.vego.common.server.auth.SessionToken
 import io.thisismo.vego.common.server.auth.UserSession
 import io.thisismo.vego.identity.server.domain.SessionRepository

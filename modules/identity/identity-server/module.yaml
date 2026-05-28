@@ -11,4 +11,5 @@ dependencies:
   - $ktor.client.cio
   - $ktor.client.contentNegotiation
   - ../identity-common
+  - ../identity-common-client
   - ../../common/server-core
