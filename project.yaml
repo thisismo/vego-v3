@@ -7,3 +7,4 @@ modules:
   - modules/identity/identity-common-client
   - modules/identity/identity-server
   - server
+  - modules/common/server-core

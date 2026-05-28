@@ -1,7 +1,12 @@
 package io.thisismo.vego.common.server.auth
 
 import io.thisismo.vego.identity.common.UserId
-import kotlinx.serialization.Serializable
+import kotlin.time.Instant
 
-@Serializable
-data class UserSession(val sub: String, val userId: UserId, val accessToken: String, val refreshToken: String)
+data class UserSession(
+    val token: SessionToken,
+    val userId: UserId,
+    val accessToken: String,
+    val refreshToken: String,
+    val accessExpiresAt: Instant
+)

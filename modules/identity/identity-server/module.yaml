@@ -6,7 +6,9 @@ apply:
 dependencies:
   - ../../common/server-auth
   - $ktor.server.auth
+  - $ktor.server.auth.jwt
   - $ktor.client.core
   - $ktor.client.cio
   - $ktor.client.contentNegotiation
   - ../identity-common
+  - ../../common/server-core

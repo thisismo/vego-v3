@@ -2,6 +2,7 @@ apply:
   - ./common.module-template.yaml
 
 dependencies:
+  - bom: $libs.ktor.bom
   - $libs.koin.ktor
   - $ktor.server.core
   - $ktor.server.netty
@@ -13,3 +14,5 @@ dependencies:
 settings:
   ktor:
     enabled: true
+    applyBom: true
+    version: $libs.ktor.version

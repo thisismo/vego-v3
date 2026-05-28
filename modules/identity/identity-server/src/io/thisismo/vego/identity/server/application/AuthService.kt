@@ -1,7 +1,7 @@
 package io.thisismo.vego.identity.server.application
 
+import io.ktor.server.plugins.NotFoundException
 import io.thisismo.vego.identity.common.DietaryPreference
-import io.thisismo.vego.identity.common.UserResponse
 import io.thisismo.vego.identity.common.UserId
 import io.thisismo.vego.identity.server.domain.User
 import io.thisismo.vego.identity.server.domain.UserRepository
@@ -9,8 +9,8 @@ import io.thisismo.vego.identity.server.domain.UserRepository
 internal class AuthService(
     private val userRepository: UserRepository
 ) {
-    suspend fun login(sub: String): User {
-        return userRepository.findBySub(sub) ?: throw IllegalArgumentException("User not found")
+    suspend fun getUser(sub: String): User {
+        return userRepository.findBySub(sub) ?: throw NotFoundException("User not found")
     }
 
     suspend fun signUp(sub: String, preferredName: String, email: String): User {

@@ -1,0 +1,8 @@
+product:
+  type: jvm/lib
+
+apply:
+  - ../../build-utils/server.module-template.yaml
+
+dependencies:
+  - $libs.logging.slf4j.api
