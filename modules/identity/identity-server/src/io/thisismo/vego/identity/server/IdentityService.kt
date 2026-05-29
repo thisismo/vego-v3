@@ -11,6 +11,40 @@ class IdentityService(private val userId: UserId) : IdentityApi {
 
     override suspend fun getUserInfo(): User {
         logger.d { "getUserInfo called for user $userId" }
-        return User(userId, "John Doe", DietaryPreference.VEGETARIAN)
+        return User(
+            userId,
+            listOf(
+                "John Doe",
+                "Jane Doe",
+                "Alice",
+                "Bob",
+                "Eve",
+                "Charlie",
+                "David",
+                "Ella",
+                "Frank",
+                "Grace",
+                "Hannah",
+                "Isaac",
+                "Jack",
+                "Katie",
+                "Liam",
+                "Mia",
+                "Nathan",
+                "Olivia",
+                "Peter",
+                "Quinn",
+                "Rachel",
+                "Sam",
+                "Tina",
+                "Uma",
+                "Victor",
+                "Wendy",
+                "Xander",
+                "Yara",
+                "Zach"
+            ).random(),
+            DietaryPreference.VEGETARIAN
+        )
     }
 }

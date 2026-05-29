@@ -6,31 +6,29 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import io.thisismo.vego.client.io.NetworkMonitor
 import io.thisismo.vego.client.io.NetworkStatus
+import io.thisismo.vego.client.io.RpcConnectionManager
+import io.thisismo.vego.client.io.serviceFlow
 import io.thisismo.vego.identity.common.IdentityApi
 import io.thisismo.vego.identity.common.User
 import org.koin.compose.koinInject
+import org.koin.core.qualifier.named
 
 @Composable
 fun AuthenticatedScreen() {
     Text("Authenticated Screen")
     val networkMonitor: NetworkMonitor = koinInject()
     val networkStatus by networkMonitor.status.collectAsState()
-    val identityApi = koinInject<IdentityApi>()
+    val connectionManager = koinInject<RpcConnectionManager>(named("identity"))
+    val identityApi by connectionManager.serviceFlow<IdentityApi>().collectAsState()
     var userInfo by remember { mutableStateOf<User?>(null) }
 
-    LaunchedEffect(Unit) {
-        userInfo = identityApi.getUserInfo()
+    LaunchedEffect(identityApi) {
+        userInfo = identityApi?.getUserInfo()
     }
 
     MaterialTheme {

@@ -1,25 +1,29 @@
 package io.thisismo.vego.client.io
 
-import co.touchlab.kermit.Logger as KermitLogger
 import io.ktor.client.*
 import io.ktor.client.plugins.*
-import io.ktor.client.plugins.auth.Auth
-import io.ktor.client.plugins.auth.providers.BearerTokens
-import io.ktor.client.plugins.auth.providers.bearer
-import io.ktor.client.plugins.logging.LogLevel
-import io.ktor.client.plugins.logging.Logger
-import io.ktor.client.plugins.logging.Logging
-import io.ktor.http.HttpStatusCode
-import io.thisismo.vego.client.auth.OidcAuthService
+import io.ktor.client.plugins.auth.*
+import io.ktor.client.plugins.logging.*
+import io.ktor.http.*
 import io.thisismo.vego.client.auth.oidcClient
 import io.thisismo.vego.client.core.SessionManager
+import kotlinx.rpc.krpc.ktor.client.installKrpc
+import kotlinx.rpc.krpc.serialization.json.json
 import org.publicvalue.multiplatform.oidc.ExperimentalOpenIdConnect
 import org.publicvalue.multiplatform.oidc.ktor.oidcBearer
 import org.publicvalue.multiplatform.oidc.tokenstore.TokenRefreshHandler
 import org.publicvalue.multiplatform.oidc.tokenstore.TokenStore
+import co.touchlab.kermit.Logger as KermitLogger
+
+class HttpClientDependencies @OptIn(ExperimentalOpenIdConnect::class) constructor(
+    val tokenStore: TokenStore,
+    val refreshHandler: TokenRefreshHandler,
+    val sessionManager: SessionManager,
+    val backendReachability: BackendReachability,
+)
 
 @OptIn(ExperimentalOpenIdConnect::class)
-fun HttpClientConfig<*>.setUpMiddleWare(tokenStore: TokenStore, refreshHandler: TokenRefreshHandler, sessionManager: SessionManager, backendReachability: BackendReachability) {
+fun HttpClientConfig<*>.setUpMiddleWare(deps: HttpClientDependencies) {
     install(Logging) {
         logger = object : Logger {
             private val kermit = KermitLogger.withTag("Ktor")
@@ -32,10 +36,7 @@ fun HttpClientConfig<*>.setUpMiddleWare(tokenStore: TokenStore, refreshHandler: 
     install(HttpRequestRetry) {
         retryOnServerErrors(maxRetries = 5)
         exponentialDelay()
-
-        retryIf { _, _ ->
-            !sessionManager.offlineMode
-        }
+        retryIf { _, _ -> !deps.sessionManager.offlineMode }
     }
     install(HttpTimeout) {
         requestTimeoutMillis = 10_000
@@ -47,29 +48,23 @@ fun HttpClientConfig<*>.setUpMiddleWare(tokenStore: TokenStore, refreshHandler: 
     }
     install(Auth) {
         oidcBearer(
-            tokenStore = tokenStore,
-            refreshHandler = refreshHandler,
+            tokenStore = deps.tokenStore,
+            refreshHandler = deps.refreshHandler,
             client = oidcClient,
         )
     }
+    installKrpc {
+        serialization { json() }
+    }
     HttpResponseValidator {
         validateResponse { response ->
-            when(val status = response.status) {
-                HttpStatusCode.Unauthorized -> sessionManager.logout()
-                else -> {
-                    when(status.value) {
-                        in 200..299 -> backendReachability.reportSuccess()
-                        in 500..599 ->backendReachability.reportFailure()
-                    }
+            when (val status = response.status) {
+                HttpStatusCode.Unauthorized -> deps.sessionManager.logout()
+                else -> when (status.value) {
+                    in 200..299 -> deps.backendReachability.reportSuccess()
+                    in 500..599 -> deps.backendReachability.reportFailure()
                 }
             }
         }
-
     }
-}
-
-@OptIn(ExperimentalOpenIdConnect::class)
-fun httpClient(tokenStore: TokenStore, refreshHandler: TokenRefreshHandler, sessionManager: SessionManager, backendReachability: BackendReachability, extraConfig: HttpClientConfig<*>.() -> Unit = {}): HttpClient = HttpClient {
-    setUpMiddleWare(tokenStore, refreshHandler, sessionManager, backendReachability)
-    extraConfig()
 }
