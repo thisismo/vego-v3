@@ -89,7 +89,7 @@ class RpcConnectionManager(
     }
 
     private suspend fun reconnect() = connectionMutex.withLock {
-        teardownLocked()
+        if (_connection.value != null) return@withLock
         val client = httpClient.rpc(endpoint) {
             rpcConfig { serialization { json() } }
         }
