@@ -33,7 +33,7 @@ fun HttpClientConfig<*>.setUpMiddleWare(tokenStore: TokenStore, refreshHandler: 
         retryOnServerErrors(maxRetries = 5)
         exponentialDelay()
 
-        retryIf { response, _ ->
+        retryIf { _, _ ->
             !sessionManager.offlineMode
         }
     }
@@ -72,8 +72,4 @@ fun HttpClientConfig<*>.setUpMiddleWare(tokenStore: TokenStore, refreshHandler: 
 fun httpClient(tokenStore: TokenStore, refreshHandler: TokenRefreshHandler, sessionManager: SessionManager, backendReachability: BackendReachability, extraConfig: HttpClientConfig<*>.() -> Unit = {}): HttpClient = HttpClient {
     setUpMiddleWare(tokenStore, refreshHandler, sessionManager, backendReachability)
     extraConfig()
-}
-
-class ResponseInterceptorPluginConfig {
-    var backendReachability: BackendReachability? = null
 }

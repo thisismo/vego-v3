@@ -6,7 +6,6 @@ import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import io.thisismo.vego.common.server.auth.UserPrincipal
 import io.thisismo.vego.common.server.auth.installAuth
 import io.thisismo.vego.common.server.auth.requireAuth
 import io.thisismo.vego.identity.common.IdentityApi
