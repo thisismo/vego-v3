@@ -17,7 +17,7 @@ struct ContentView: View {
 @main
 struct iosApp: App {
     init() {
-        CommonClientModule_iosKt.doInitKoinIos()
+        ViewControllerKt.doInitKoinIosApp()
     }
 
     var body: some Scene {

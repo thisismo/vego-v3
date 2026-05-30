@@ -2,9 +2,9 @@ package io.thisismo.vego.client.core
 
 import co.touchlab.kermit.Logger
 import io.thisismo.vego.client.auth.OidcAuthService
-import io.thisismo.vego.client.io.BackendReachability
-import io.thisismo.vego.client.io.NetworkMonitor
-import io.thisismo.vego.client.io.NetworkStatus
+import io.thisismo.vego.client.auth.infrastructure.network.BackendReachability
+import io.thisismo.vego.client.auth.infrastructure.network.NetworkMonitor
+import io.thisismo.vego.client.auth.infrastructure.network.NetworkStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

@@ -1,4 +1,4 @@
-package io.thisismo.vego.client.auth.screens
+package io.thisismo.vego.client.auth.presentation.screens
 
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -9,10 +9,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import io.thisismo.vego.client.auth.AuthService
 import io.thisismo.vego.client.core.SessionManager
-import io.thisismo.vego.client.io.NetworkMonitor
-import io.thisismo.vego.client.io.NetworkStatus
+import io.thisismo.vego.client.auth.infrastructure.network.NetworkMonitor
+import io.thisismo.vego.client.auth.infrastructure.network.NetworkStatus
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 

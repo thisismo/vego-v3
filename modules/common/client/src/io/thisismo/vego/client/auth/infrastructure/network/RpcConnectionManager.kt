@@ -1,4 +1,4 @@
-package io.thisismo.vego.client.io
+package io.thisismo.vego.client.auth.infrastructure.network
 
 import io.ktor.client.*
 import kotlinx.coroutines.CoroutineScope

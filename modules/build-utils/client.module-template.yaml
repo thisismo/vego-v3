@@ -13,6 +13,9 @@ dependencies:
   - $libs.logging.kermit: exported
   - $kotlin.rpc.krpc.ktor.client
   - $kotlin.rpc.krpc.serialization.json
+  - $libs.androidx.datastore: exported
+  - $libs.androidx.datastore.core.okio: exported
+  - $libs.okio: exported
 
 dependencies@ios:
   - $libs.ktor.client.darwin: exported

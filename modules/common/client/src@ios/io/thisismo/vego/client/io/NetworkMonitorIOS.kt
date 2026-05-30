@@ -1,5 +1,7 @@
 package io.thisismo.vego.client.io
 
+import io.thisismo.vego.client.auth.infrastructure.network.NetworkMonitor
+import io.thisismo.vego.client.auth.infrastructure.network.NetworkStatus
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,8 +15,6 @@ import platform.Network.nw_path_monitor_set_queue
 import platform.Network.nw_path_monitor_set_update_handler
 import platform.Network.nw_path_monitor_start
 import platform.Network.nw_path_status_satisfied
-import platform.darwin.DISPATCH_QUEUE_SERIAL
-import platform.darwin.dispatch_get_main_queue
 import platform.darwin.dispatch_queue_create
 import kotlin.time.Duration.Companion.milliseconds
 

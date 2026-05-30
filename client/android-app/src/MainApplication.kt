@@ -1,8 +1,9 @@
 package hello.world
 
 import android.app.Application
-import io.thisismo.vego.client.di.commonClientModule
-import io.thisismo.vego.client.di.initKoin
+import io.thisismo.vego.client.auth.infrastructure.di.commonClientModule
+import io.thisismo.vego.client.auth.infrastructure.di.initKoin
+import io.thisismo.vego.identity.common.client.identityClientModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 
@@ -12,7 +13,7 @@ class MainApplication : Application() {
         initKoin {
             androidLogger()
             androidContext(this@MainApplication)
-            modules(commonClientModule())
+            modules(commonClientModule(), identityClientModule())
         }
     }
 }

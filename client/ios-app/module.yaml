@@ -1,8 +1,10 @@
 product:
   type: ios/app
+  platforms: [ iosArm64, iosSimulatorArm64 ]
 
 dependencies:
   - ../../modules/common/client
+  - ../../modules/identity/identity-common-client
 
 settings:
   compose: enabled

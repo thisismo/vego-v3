@@ -1,14 +1,15 @@
-package io.thisismo.vego.client.di
+package io.thisismo.vego.client.auth.infrastructure.di
 
 import io.ktor.client.*
 import io.thisismo.vego.client.auth.AuthService
 import io.thisismo.vego.client.auth.OidcAuthService
 import io.thisismo.vego.client.core.ClientCore
 import io.thisismo.vego.client.core.SessionManager
-import io.thisismo.vego.client.io.BackendReachability
-import io.thisismo.vego.client.io.HttpClientDependencies
-import io.thisismo.vego.client.io.RpcConnectionManager
-import io.thisismo.vego.client.io.setUpMiddleWare
+import io.thisismo.vego.client.datastore.FeatureDataStoreFactory
+import io.thisismo.vego.client.auth.infrastructure.network.BackendReachability
+import io.thisismo.vego.client.auth.infrastructure.network.HttpClientDependencies
+import io.thisismo.vego.client.auth.infrastructure.network.RpcConnectionManager
+import io.thisismo.vego.client.auth.infrastructure.network.setUpMiddleWare
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -51,6 +52,7 @@ fun initKoin(config: KoinAppDeclaration? = null): KoinApplication {
         includes(config)
         modules(commonClientModule(), module {
             singleOf(::TokenRefreshHandler)
+            single { FeatureDataStoreFactory(get()) }
             singleOf(::ClientCore)
             singleOf(::SessionManager)
             singleOf(::OidcAuthService) bind AuthService::class

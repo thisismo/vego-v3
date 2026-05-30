@@ -1,6 +1,6 @@
 dependencies:
   - bom: $libs.koin.bom
-  - $libs.koin.core
+  - $libs.koin.core: exported
   - $libs.koin.test
   - $libs.logging.kermit
   - $kotlin.serialization.json

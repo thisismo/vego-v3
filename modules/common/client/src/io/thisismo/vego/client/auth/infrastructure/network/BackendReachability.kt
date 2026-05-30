@@ -1,14 +1,10 @@
-package io.thisismo.vego.client.io
+package io.thisismo.vego.client.auth.infrastructure.network
 
-import io.ktor.client.plugins.ResponseException
-import io.ktor.client.plugins.ServerResponseException
-import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.io.IOException
 
 class BackendReachability(
     private val networkMonitor: NetworkMonitor,

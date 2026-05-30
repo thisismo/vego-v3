@@ -4,6 +4,9 @@ ktor-bom = "3.5.0"
 oidc = "0.16.5"
 kermit = "2.1.0"
 logback = "1.5.18"
+realm = "2.3.0"
+androidx-datastore = "1.3.0-alpha09"
+okio = "3.9.1"
 
 [libraries]
 # Koin
@@ -36,3 +39,10 @@ logging-kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 
 # Logback (SLF4J provider for JVM server)
 logging-logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+
+# AndroidX DataStore
+androidx-datastore = { module = "androidx.datastore:datastore-core", version.ref = "androidx-datastore" }
+androidx-datastore-core-okio = { module = "androidx.datastore:datastore-core-okio", version.ref = "androidx-datastore" }
+
+# Okio (multiplatform file IO used by DataStore)
+okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
