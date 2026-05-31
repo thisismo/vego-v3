@@ -3,9 +3,15 @@ product:
   platforms: [ iosArm64, iosSimulatorArm64 ]
 
 dependencies:
-  - ../../modules/common/client
+  - ../core
   - ../../modules/identity/identity-common-client
 
 settings:
   compose: enabled
+  kotlin:
+    # SQLDelight's iOS driver (SQLiter) calls into the system SQLite, so the native binary must be
+    # linked against libsqlite3.
+    freeCompilerArgs:
+      - -linker-option
+      - -lsqlite3
   

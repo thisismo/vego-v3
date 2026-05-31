@@ -1,0 +1,9 @@
+dependencies:
+  - $libs.sqldelight.runtime: exported
+  - $libs.kotlinx.coroutines.core: exported
+
+dependencies@android:
+  - $libs.sqldelight.android.driver
+
+dependencies@ios:
+  - $libs.sqldelight.native.driver

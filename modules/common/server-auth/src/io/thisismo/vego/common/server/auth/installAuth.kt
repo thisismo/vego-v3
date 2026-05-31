@@ -2,15 +2,11 @@ package io.thisismo.vego.common.server.auth
 
 import com.auth0.jwk.JwkProvider
 import com.auth0.jwk.JwkProviderBuilder
-import io.ktor.server.application.Application
-import io.ktor.server.application.install
-import io.ktor.server.auth.Authentication
-import io.ktor.server.auth.jwt.JWTPrincipal
-import io.ktor.server.auth.jwt.jwt
-import io.thisismo.vego.identity.common.UserId
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import java.net.URI
 import java.util.concurrent.TimeUnit
-import kotlin.uuid.Uuid
 
 const val jwksUri = "http://localhost:8080/realms/vegoapp/protocol/openid-connect/certs"
 val trustedIssuers = listOf(
@@ -27,7 +23,7 @@ val keycloakJwkProvider: JwkProvider =
 
 fun Application.installAuth() {
     install(Authentication) {
-        jwt("jwt-auth") {
+        jwt {
             verifier(keycloakJwkProvider) {
                 withIssuer(*trustedIssuers.toTypedArray())
             }

@@ -1,9 +1,10 @@
 modules:
   - client/android-app
   - client/ios-app
-  - modules/common/client
+  - client/core
   - modules/common/server-auth
   - modules/identity/identity-common
   - modules/identity/identity-common-client
   - modules/identity/identity-server
   - server
+  - modules/common/client

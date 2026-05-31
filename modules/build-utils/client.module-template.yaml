@@ -8,14 +8,7 @@ dependencies:
   - $compose.material3: exported
   - bom: $libs.ktor.bom
   - $libs.ktor.client.core: exported
-  - $libs.ktor.client.auth
   - $libs.ktor.client.logging
-  - $libs.logging.kermit: exported
-  - $kotlin.rpc.krpc.ktor.client
-  - $kotlin.rpc.krpc.serialization.json
-  - $libs.androidx.datastore: exported
-  - $libs.androidx.datastore.core.okio: exported
-  - $libs.okio: exported
 
 dependencies@ios:
   - $libs.ktor.client.darwin: exported
@@ -27,3 +20,6 @@ dependencies@android:
 settings:
   compose:
     enabled: true
+  kotlin:
+    freeCompilerArgs:
+      - -Xexpect-actual-classes

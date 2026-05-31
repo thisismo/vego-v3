@@ -165,6 +165,10 @@
 					"@loader_path/Frameworks",
 				);
 				ONLY_ACTIVE_ARCH = YES;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lsqlite3",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "vego-v3";
 				PRODUCT_MODULE_NAME = app;
 				PRODUCT_NAME = "ios-app";
@@ -212,6 +216,10 @@
 				PRODUCT_MODULE_NAME = app;
 				PRODUCT_NAME = "ios-app";
 				SDKROOT = iphoneos;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lsqlite3",
+				);
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1 2";
 			};

@@ -4,7 +4,8 @@ apply:
 dependencies:
   - $libs.koin.ktor
   - $ktor.server.core
-  - $ktor.server.netty
+  - $ktor.server.cio
+  - $ktor.server.callLogging
   - $ktor.serialization.kotlinx
   - $ktor.serialization.kotlinx.json
   - $kotlin.rpc.krpc.ktor.server

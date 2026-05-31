@@ -4,7 +4,8 @@ product:
 
 apply:
   - ../../build-utils/client.module-template.yaml
+  - ../../build-utils/client-persistence.module-template.yaml
 
 dependencies:
-  - ../../common/client: exported
-  - ../identity-common: exported
+  - ../identity-common
+  - ../../common/client

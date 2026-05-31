@@ -4,11 +4,14 @@ product:
 
 apply:
   - ../../build-utils/client.module-template.yaml
+  - ../../build-utils/client-persistence.module-template.yaml
 
 dependencies:
   - $libs.oidc.appsupport
   - $libs.oidc.ktor
+  - $libs.ktor.client.auth
+  - $libs.ktor.client.call.id
   - ../../identity/identity-common
-
-dependencies@android:
-  - $libs.oidc.okhttp4
+  - $kotlin.rpc.krpc.ktor.client
+  - $kotlin.rpc.krpc.serialization.json
+  - $libs.kotlinx.atomicfu

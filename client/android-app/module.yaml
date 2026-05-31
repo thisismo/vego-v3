@@ -1,7 +1,7 @@
 product: android/app
 
 dependencies:
-  - ../../modules/common/client
+  - ../core
   - ../../modules/identity/identity-common-client
   - androidx.activity:activity-compose:1.12.4
 

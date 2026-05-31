@@ -1,0 +1,13 @@
+product:
+  type: kmp/lib
+  platforms: [ android, iosArm64, iosSimulatorArm64 ]
+
+apply:
+  - ../../modules/build-utils/client.module-template.yaml
+
+dependencies:
+  - $libs.oidc.appsupport
+  - $libs.oidc.ktor
+  - ../../modules/identity/identity-common
+  - ../../modules/common/client
+  - ../../modules/identity/identity-common-client
