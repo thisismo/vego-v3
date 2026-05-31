@@ -8,3 +8,7 @@ modules:
   - modules/identity/identity-server
   - server
   - modules/common/client
+  - modules/sqldelight-plugin
+
+plugins:
+  - ./modules/sqldelight-plugin

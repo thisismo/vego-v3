@@ -6,6 +6,9 @@ apply:
   - ../../build-utils/client.module-template.yaml
   - ../../build-utils/client-persistence.module-template.yaml
 
+plugins:
+  sqldelight-plugin: enabled
+
 dependencies:
   - ../identity-common
   - ../../common/client

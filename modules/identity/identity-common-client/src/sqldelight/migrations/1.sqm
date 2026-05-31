@@ -1,0 +1,6 @@
+CREATE TABLE user (
+    id INTEGER NOT NULL PRIMARY KEY,
+    userId TEXT NOT NULL,
+    name TEXT NOT NULL,
+    dietaryPreference TEXT NOT NULL
+);

@@ -1,0 +1,19 @@
+CREATE TABLE user (
+    id INTEGER NOT NULL PRIMARY KEY,
+    userId TEXT NOT NULL,
+    name TEXT NOT NULL,
+    dietaryPreference TEXT NOT NULL
+);
+
+selectUser:
+SELECT id, userId, name, dietaryPreference
+FROM user
+WHERE id = 1
+LIMIT 1;
+
+upsert:
+INSERT OR REPLACE INTO user(id, userId, name, dietaryPreference)
+VALUES (?, ?, ?, ?);
+
+clear:
+DELETE FROM user;

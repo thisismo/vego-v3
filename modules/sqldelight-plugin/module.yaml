@@ -1,0 +1,7 @@
+product: jvm/amper-plugin
+
+dependencies:
+  - $libs.sqldelight.compiler
+  - $libs.sqlite.dialect
+  - $libs.sqldelight.gradle.plugin
+  - $libs.sqldelight.environment

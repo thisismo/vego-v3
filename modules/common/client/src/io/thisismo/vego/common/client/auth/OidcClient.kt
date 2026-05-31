@@ -7,7 +7,7 @@ const val OIDC_DISCOVERY_URI = "http://Moritzs-MacBook-Pro.local:8080/realms/veg
 
 val oidcClient = OpenIdConnectClient(discoveryUri = OIDC_DISCOVERY_URI) {
     clientId = "vego-kmp-client"
-    scope = "openid profile offline_access"
+    scope = "openid profile"
     codeChallengeMethod = CodeChallengeMethod.S256
     redirectUri = "vegoapp://identity"
 }

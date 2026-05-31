@@ -1,0 +1,21 @@
+# Build
+build/
+.gradle/
+out/
+
+# Idea
+.idea/
+*.iml
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Agent files
+.junie/
+
+# iOS Metadata
+*.xcworkspace/
+xcuserdata/

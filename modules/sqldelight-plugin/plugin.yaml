@@ -1,0 +1,10 @@
+tasks:
+  generate:
+      action: !io.thisismo.vego.runSqlDelight
+        moduleRootDir: ${module.rootDir}
+        outputDirectory: ${taskOutputDir}
+
+generated:
+  sources:
+    - language: kotlin
+      directory: ${tasks.generate.action.outputDirectory}

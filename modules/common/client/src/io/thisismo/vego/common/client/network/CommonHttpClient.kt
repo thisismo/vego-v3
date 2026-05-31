@@ -38,7 +38,7 @@ fun HttpClientConfig<*>.setUpMiddleWare(deps: HttpClientDependencies) {
         level = LogLevel.ALL
     }
     install(HttpRequestRetry) {
-        retryOnServerErrors(maxRetries = 5)
+        retryIf(maxRetries = 5) { _, response -> response.status.value in 401..599 && deps.networkMonitor.status.value == NetworkStatus.Online }
         exponentialDelay()
     }
     install(HttpTimeout) {
