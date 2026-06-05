@@ -5,18 +5,14 @@ import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.agents.core.agent.entity.AIAgentGraphStrategy
 import ai.koog.agents.core.dsl.builder.node
 import ai.koog.agents.core.dsl.builder.strategy
-import ai.koog.agents.core.dsl.extension.Concept
-import ai.koog.agents.core.dsl.extension.FactRetrievalHistoryCompressionStrategy
-import ai.koog.agents.core.dsl.extension.FactType
-import ai.koog.agents.core.dsl.extension.nodeLLMCompressHistory
-import ai.koog.agents.core.dsl.extension.nodeLLMRequestStructured
+import ai.koog.agents.core.dsl.extension.*
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.core.tools.reflect.asTool
 import ai.koog.agents.ext.agent.subgraphWithTask
 import ai.koog.agents.features.acp.AcpAgent
 import ai.koog.agents.features.acp.withAcpAgent
 import ai.koog.prompt.dsl.prompt
-import ai.koog.prompt.executor.clients.openrouter.OpenRouterModels
+import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.utils.time.KoogClock
 import com.agentclientprotocol.agent.AgentInfo
@@ -25,12 +21,7 @@ import com.agentclientprotocol.agent.AgentSupport
 import com.agentclientprotocol.client.ClientInfo
 import com.agentclientprotocol.common.Event
 import com.agentclientprotocol.common.SessionCreationParameters
-import com.agentclientprotocol.model.AgentCapabilities
-import com.agentclientprotocol.model.ContentBlock
-import com.agentclientprotocol.model.LATEST_PROTOCOL_VERSION
-import com.agentclientprotocol.model.PromptCapabilities
-import com.agentclientprotocol.model.SessionId
-import com.agentclientprotocol.model.SessionUpdate
+import com.agentclientprotocol.model.*
 import com.agentclientprotocol.protocol.Protocol
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Deferred
@@ -64,7 +55,21 @@ private enum class Phase {
     DONE,
 }
 
-private val analystModel = OpenRouterModels.Claude4_5Sonnet
+/**
+ * Per-stage models. Each workflow stage is matched to a model whose strengths fit the task:
+ *
+ *  - [businessAnalysisModel] — fast, highly conversational; drives intake and the first HitL form.
+ *  - [technicalDesignModel] — a reasoning model for the heavy architecture specs (ADRs / OpenAPI / C4).
+ *  - [validationModel] — fast again, for the quick verification checks and the second HitL review.
+ *  - [teardownModel] — fast; only runs the deterministic git commit loop.
+ *
+ * Within a single agent run the active model is switched per node via [llm.writeSession].changeModel,
+ * which persists the new model on the shared LLM context for all subsequent nodes and subgraphs.
+ */
+private val businessAnalysisModel = OpenAIModels.Chat.GPT4o
+private val technicalDesignModel = OpenAIModels.Chat.O3Mini
+private val validationModel = OpenAIModels.Chat.GPT4o
+private val teardownModel = OpenAIModels.Chat.GPT4o
 
 /**
  * A business-analyst / software-architect agent session driven over the Agent Client Protocol.
@@ -145,7 +150,8 @@ class KoogAnalystSession(
                     """.trimIndent()
                 )
             },
-            model = analystModel,
+            // Business Analysis runs entirely on the fast, conversational model.
+            model = businessAnalysisModel,
             maxAgentIterations = 50,
         )
 
@@ -219,7 +225,9 @@ class KoogAnalystSession(
                 user("APPROVED REQUIREMENTS DRAFT:\n${renderDraftText(draft)}")
                 user("CLARIFYING QUESTIONS THAT WERE ASKED:\n${renderQuestions(draft)}")
             },
-            model = analystModel,
+            // Base model for the cheap framing nodes (answer ingestion + history compression).
+            // The graph then switches to the reasoning model for design and back for validation.
+            model = businessAnalysisModel,
             maxAgentIterations = 200,
         )
 
@@ -240,6 +248,16 @@ class KoogAnalystSession(
 
             // Compression Interceptor — distill the conversation into dense facts, prune the chatter.
             val compress by nodeLLMCompressHistory<Unit>("compression-interceptor", strategy = compression)
+
+            // Switch to the deep-reasoning model for the heavy specification work.
+            val useDesignModel by node<Unit, Unit>("use-design-model") {
+                llm.writeSession { changeModel(technicalDesignModel) }
+            }
+
+            // Switch back to the fast model for the quick verification checks and HitL review.
+            val useValidationModel by node<Unit, Unit>("use-validation-model") {
+                llm.writeSession { changeModel(validationModel) }
+            }
 
             // TechnicalDesign node — autonomous tool loop that writes the artifacts to disk.
             val technicalDesign by subgraphWithTask<Unit, Unit>(name = "technical-design") {
@@ -288,7 +306,9 @@ class KoogAnalystSession(
                 }
             }
 
-            nodeStart then ingestAnswers then compress then technicalDesign then validate then reportPrompt then report
+            nodeStart then ingestAnswers then compress then
+                useDesignModel then technicalDesign then
+                useValidationModel then validate then reportPrompt then report
             edge(report forwardTo emitReview transformed { it.getOrThrow().data })
             edge(emitReview forwardTo nodeFinish)
         }
@@ -309,7 +329,8 @@ class KoogAnalystSession(
                     """.trimIndent()
                 )
             },
-            model = analystModel,
+            // Teardown is a deterministic git commit loop — keep it on the fast model.
+            model = teardownModel,
             maxAgentIterations = 100,
         )
 

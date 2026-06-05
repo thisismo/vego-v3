@@ -1,6 +1,6 @@
 package io.thisismo.vego.agent
 
-import ai.koog.prompt.executor.llms.all.simpleOpenRouterExecutor
+import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import ai.koog.utils.time.KoogClock
 import com.agentclientprotocol.agent.Agent
 import com.agentclientprotocol.protocol.Protocol
@@ -28,8 +28,9 @@ private val logger = KotlinLogging.logger {}
  */
 suspend fun main() = coroutineScope {
     logger.info { "Starting business-analysis / architecture ACP agent" }
-    val apiKey = System.getenv("OPENROUTER_API_KEY")
-        ?: error("OPENROUTER_API_KEY env variable is not set")
+
+    val apiKey = System.getenv("OPENAI_API_KEY")
+        ?: error("The API key is not set.")
 
     val agentTransport = StdioTransport(
         parentScope = this,
@@ -38,10 +39,9 @@ suspend fun main() = coroutineScope {
         output = BufferedOutputStream(System.out).asSink().buffered(),
         name = "agent",
     )
+    val promptExecutor = simpleOpenAIExecutor(apiKey)
 
-    val promptExecutor = simpleOpenRouterExecutor(apiKey)
-
-    try {
+    agentTransport.use { agentTransport ->
         val agentJob = launch {
             val agentProtocol = Protocol(this, agentTransport)
 
@@ -60,7 +60,5 @@ suspend fun main() = coroutineScope {
 
         agentJob.join()
         logger.info { "Agent job completed" }
-    } finally {
-        agentTransport.close()
     }
 }
