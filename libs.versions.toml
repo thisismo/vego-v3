@@ -9,6 +9,8 @@ sqldelight = "2.3.2"
 coroutines = "1.11.0"
 atomicfu = "0.33.0"
 sqldelight-env = "0.7.3"
+koog = "1.0.0"
+koog-additions = "1.0.0-beta"
 
 [libraries]
 # Koin
@@ -55,3 +57,8 @@ sqldelight-environment = { module = "app.cash.sql-psi:environment", version.ref 
 # KotlinX
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines"}
 kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
+
+# Koog
+koog = { module = "ai.koog:koog-agents", version.ref = "koog" }
+koog-agents-features-acp = { module = "ai.koog:agents-features-acp", version.ref = "koog-additions"}
+koog-agents-additions = { module = "ai.koog:koog-agents-additions", version.ref = "koog-additions" }

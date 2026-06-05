@@ -1,0 +1,21 @@
+product: jvm/app
+
+apply:
+  - ../apps/modules/build-utils/common.module-template.yaml
+
+dependencies:
+  # Koog agent framework + the Agent Client Protocol (ACP) feature.
+  # Versions are pinned in the root libs.versions.toml (koog = 1.0.0, acp feature = 1.0.0-beta).
+  - $libs.koog
+  - $libs.koog.agents.additions
+  - $libs.koog.agents.features.acp
+  # ACP speaks newline-delimited JSON-RPC over stdio, which needs kotlinx-io sources/sinks.
+  - org.jetbrains.kotlinx:kotlinx-io-core:0.9.0
+  - $libs.kotlinx.coroutines.core
+  # SLF4J backend so Koog/ACP logging goes to stderr (stdout is reserved for the protocol).
+  - $libs.logging.logback.classic
+
+settings:
+  kotlin:
+    optIns:
+      - kotlin.uuid.ExperimentalUuidApi
