@@ -16,6 +16,10 @@ out/
 # Agent files
 .junie/
 
+# Agent long-term memory + derived local RAG index (machine-local, not history)
+.vego/
+docs/.index/
+
 # iOS Metadata
 *.xcworkspace/
 xcuserdata/

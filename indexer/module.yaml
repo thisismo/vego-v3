@@ -1,0 +1,12 @@
+product: jvm/app
+
+# Workflow 4 entrypoint: a tiny CLI the repository's post-commit hook runs directly to re-index the
+# specs a commit touched. It replaces the previous "dormant Ktor server + HTTP endpoint" — local doc
+# indexing needs no running server. All indexing logic lives in the shared `indexing` library.
+
+dependencies:
+  - ../indexing
+
+settings:
+  jvm:
+    mainClass: io.thisismo.vego.agent.indexer.MainKt

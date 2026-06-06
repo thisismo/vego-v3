@@ -1,0 +1,15 @@
+product: jvm/lib
+
+# The committed-design RAG index domain, shared by two processes that have no other coupling:
+#  - the `agent` reads the index during hydration (RagIndexReader);
+#  - the `indexer` CLI writes it from the post-commit hook (DocIndexer).
+# Keeping the model, the canonical path, and both sides in one library makes the on-disk format a
+# single source of truth instead of being mirrored independently in each process.
+
+dependencies:
+  - $kotlin.serialization.json
+
+settings:
+  kotlin:
+    serialization:
+      format: json

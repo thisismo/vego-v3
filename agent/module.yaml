@@ -4,6 +4,9 @@ apply:
   - ../apps/modules/build-utils/common.module-template.yaml
 
 dependencies:
+  # Shared committed-design RAG index: the agent reads it during hydration (RagIndexReader); the
+  # `indexer` CLI writes it from the post-commit hook. Same on-disk format, one source of truth.
+  - ../indexing
   # Koog agent framework + the Agent Client Protocol (ACP) feature.
   # Versions are pinned in the root libs.versions.toml (koog = 1.0.0, acp feature = 1.0.0-beta).
   - $libs.koog
