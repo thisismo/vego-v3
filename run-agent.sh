@@ -4,4 +4,4 @@
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Replace the shell process with the Java process executing the target JAR
-exec java -jar "$DIR/build/tasks/_agent_executableJarJvm/agent-jvm-executable.jar"
+exec java -jar "$DIR/build/tasks/_analyst_executableJarJvm/analyst-jvm-executable.jar"
