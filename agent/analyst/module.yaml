@@ -1,7 +1,7 @@
 product: jvm/app
 
 apply:
-  - ../apps/modules/build-utils/common.module-template.yaml
+  - ../../apps/modules/build-utils/common.module-template.yaml
 
 dependencies:
   # Shared committed-design RAG index: the agent reads it during hydration (RagIndexReader); the

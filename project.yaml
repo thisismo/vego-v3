@@ -1,5 +1,5 @@
 modules:
-  - agent
+  - agent/analyst
   - apps/client/android-app
   - apps/client/core
   - apps/client/ios-app
@@ -10,8 +10,8 @@ modules:
   - apps/modules/identity/identity-server
   - apps/modules/sqldelight-plugin
   - apps/server
-  - indexer
-  - indexing
+  - agent/indexer
+  - agent/indexing
 
 plugins:
   - ./apps/modules/sqldelight-plugin
