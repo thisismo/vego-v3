@@ -40,6 +40,8 @@ suspend fun main() = coroutineScope {
         name = "agent",
     )
     val promptExecutor = simpleOpenAIExecutor(apiKey)
+    // Per-stage models: defaults live in AnalystModelConfig, overridable via ANALYST_MODEL_<STAGE> env vars.
+    val models = AnalystModelConfig.fromEnvironment()
 
     agentTransport.use { agentTransport ->
         val agentJob = launch {
@@ -51,6 +53,7 @@ suspend fun main() = coroutineScope {
                     protocol = agentProtocol,
                     promptExecutor = promptExecutor,
                     clock = KoogClock.System,
+                    models = models,
                 ),
             )
 

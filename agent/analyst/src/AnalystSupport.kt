@@ -20,6 +20,7 @@ class KoogAnalystSupport(
     private val promptExecutor: PromptExecutor,
     private val protocol: Protocol,
     private val clock: KoogClock,
+    private val models: AnalystModelConfig,
 ) : AgentSupport {
     companion object {
         private val logger = KotlinLogging.logger {}
@@ -50,6 +51,7 @@ class KoogAnalystSupport(
             protocol = protocol,
             clock = clock,
             workspaceRoot = sessionParameters.cwd,
+            models = models,
         )
     }
 }

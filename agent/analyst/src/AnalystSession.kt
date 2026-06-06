@@ -9,11 +9,18 @@ import ai.koog.agents.core.dsl.extension.*
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.core.tools.reflect.asTool
 import ai.koog.agents.ext.agent.subgraphWithTask
+import ai.koog.agents.ext.tool.file.EditFileTool
+import ai.koog.agents.ext.tool.file.ListDirectoryTool
+import ai.koog.agents.ext.tool.file.ReadFileTool
+import ai.koog.agents.ext.tool.file.WriteFileTool
+import ai.koog.agents.ext.tool.shell.BraveModeConfirmationHandler
+import ai.koog.agents.ext.tool.shell.ExecuteShellCommandTool
+import ai.koog.agents.ext.tool.shell.JvmShellCommandExecutor
 import ai.koog.agents.features.acp.AcpAgent
 import ai.koog.agents.features.acp.withAcpAgent
 import ai.koog.prompt.dsl.prompt
-import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.model.PromptExecutor
+import ai.koog.rag.base.files.JVMFileSystemProvider
 import ai.koog.utils.time.KoogClock
 import com.agentclientprotocol.agent.AgentSession
 import com.agentclientprotocol.common.Event
@@ -55,22 +62,6 @@ private enum class Phase {
     DONE,
 }
 
-/**
- * Per-stage models. Each workflow stage is matched to a model whose strengths fit the task:
- *
- *  - [businessAnalysisModel] — fast, highly conversational; drives intake and the first HitL form.
- *  - [technicalDesignModel] — a reasoning model for the heavy specification work (ADRs / UX specs).
- *  - [validationModel] — fast again, for the self-healing validation loop.
- *  - [finalizeModel] — fast; distils the session into a durable long-term-memory memo.
- *
- * Within a single agent run the active model is switched per node via [llm.writeSession].changeModel,
- * which persists the new model on the shared LLM context for all subsequent nodes and subgraphs.
- */
-private val businessAnalysisModel = OpenAIModels.Chat.GPT4o
-private val technicalDesignModel = OpenAIModels.Chat.O3Mini
-private val validationModel = OpenAIModels.Chat.GPT4o
-private val finalizeModel = OpenAIModels.Chat.GPT4o
-
 /** Bounds the self-healing repair loop so a doc the agent cannot fix can never spin forever. */
 private const val MAX_SELF_HEAL_ROUNDS = 3
 
@@ -97,6 +88,7 @@ class KoogAnalystSession(
     private val protocol: Protocol,
     private val clock: KoogClock,
     private val workspaceRoot: String,
+    private val models: AnalystModelConfig,
 ) : AgentSession {
     companion object {
         private val logger = KotlinLogging.logger {}
@@ -160,7 +152,7 @@ class KoogAnalystSession(
                 )
             },
             // Business Analysis runs entirely on the fast, conversational model.
-            model = businessAnalysisModel,
+            model = models.businessAnalysis,
             maxAgentIterations = 50,
         )
 
@@ -238,7 +230,7 @@ class KoogAnalystSession(
             },
             // Base model for the cheap framing nodes (answer ingestion + history compression).
             // The graph then switches to the reasoning model for design and back for validation.
-            model = businessAnalysisModel,
+            model = models.businessAnalysis,
             maxAgentIterations = 200,
         )
 
@@ -262,19 +254,19 @@ class KoogAnalystSession(
 
             // Switch to the deep-reasoning model for the heavy specification work.
             val useDesignModel by node<Unit, Unit>("use-design-model") {
-                llm.writeSession { changeModel(technicalDesignModel) }
+                llm.writeSession { changeModel(models.technicalDesign) }
             }
 
             // Switch back to the fast model for the self-healing validation loop.
             val useValidationModel by node<Unit, Unit>("use-validation-model") {
-                llm.writeSession { changeModel(validationModel) }
+                llm.writeSession { changeModel(models.validation) }
             }
 
             // Workflow 1 — TechnicalDesign: autonomous tool loop that writes the artifacts to disk.
             val technicalDesign by subgraphWithTask<Unit, Unit>(name = "technical-design") {
                 """
                 Using the extracted facts and approved requirements in this conversation, write the
-                following with the write_file tool (absolute paths), straight into the working directory:
+                following with the write-file tool (absolute paths), straight into the working directory:
                   1. Architecture Decision Records as $adrDir/NNNN-title.md — one per key decision,
                      each with Context / Decision / Consequences sections.
                   2. A UI component inventory at $uxDir/component-inventory.md listing each UI component
@@ -291,7 +283,7 @@ class KoogAnalystSession(
                 Validate the documents you just wrote, BEFORE the user sees them:
                   1. Call lint_markdown_docs on $adrDir and again on $uxDir.
                   2. If either reports issues (e.g. a broken relative Markdown link), fix the offending
-                     files with edit_file / write_file, then call lint_markdown_docs again.
+                     files with the edit-file or write-file tools, then call lint_markdown_docs again.
                   3. Repeat until both directories report "OK — no issues found." (at most
                      $MAX_SELF_HEAL_ROUNDS repair rounds).
                 Do NOT run git. Finish once the docs are clean (or you have exhausted the repair rounds).
@@ -362,7 +354,7 @@ class KoogAnalystSession(
                 requirementsDraft?.let { user("APPROVED REQUIREMENTS:\n${renderDraftText(it)}") }
                 user("VALIDATED SPECIFICATION DOCUMENTS:\n$docExcerpts")
             },
-            model = finalizeModel,
+            model = models.finalize,
             maxAgentIterations = 20,
         )
 
@@ -437,20 +429,28 @@ class KoogAnalystSession(
         }
     }
 
-    /** Tools available during intake — read-only context gathering. */
+    /** Tools available during intake — read-only context gathering (Koog built-ins). */
     private fun intakeToolRegistry() = ToolRegistry {
-        tool(::listDirectory.asTool())
-        tool(::readFile.asTool())
+        tool(ListDirectoryTool(JVMFileSystemProvider.ReadOnly))
+        tool(ReadFileTool(JVMFileSystemProvider.ReadOnly))
     }
 
-    /** Tools available during design + self-healing validation — read/write/lint/shell (never git). */
+    /**
+     * Tools available during design + self-healing validation — read/write/lint/shell (never git).
+     *
+     * File and shell access are Koog's built-in tools; [lintMarkdownDocs] stays a custom tool because
+     * it is the domain-specific deterministic checker that backs the self-healing loop. The shell tool
+     * runs in "brave mode" (no interactive confirmation) — this agent talks ACP/JSON-RPC over stdio,
+     * so a console confirmation prompt is impossible; the prompt forbids git and the user reviews and
+     * commits everything manually.
+     */
     private fun executionToolRegistry() = ToolRegistry {
-        tool(::listDirectory.asTool())
-        tool(::readFile.asTool())
-        tool(::writeFile.asTool())
-        tool(::editFile.asTool())
+        tool(ListDirectoryTool(JVMFileSystemProvider.ReadOnly))
+        tool(ReadFileTool(JVMFileSystemProvider.ReadOnly))
+        tool(WriteFileTool(JVMFileSystemProvider.ReadWrite))
+        tool(EditFileTool(JVMFileSystemProvider.ReadWrite))
         tool(::lintMarkdownDocs.asTool())
-        tool(::runShellCommand.asTool())
+        tool(ExecuteShellCommandTool(JvmShellCommandExecutor(), BraveModeConfirmationHandler()))
     }
 
     private fun readDocExcerpts(files: List<String>, maxChars: Int = 1_500): String {

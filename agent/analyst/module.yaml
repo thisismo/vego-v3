@@ -12,6 +12,8 @@ dependencies:
   - $libs.koog
   - $libs.koog.agents.additions
   - $libs.koog.agents.features.acp
+  # Koog built-in tools (ReadFileTool/WriteFileTool/EditFileTool/ListDirectoryTool/ExecuteShellCommandTool).
+  - $libs.koog.agents.ext
   # ACP speaks newline-delimited JSON-RPC over stdio, which needs kotlinx-io sources/sinks.
   - org.jetbrains.kotlinx:kotlinx-io-core:0.9.0
   - $libs.kotlinx.coroutines.core

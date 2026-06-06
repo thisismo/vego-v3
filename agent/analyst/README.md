@@ -47,8 +47,17 @@ Set an OpenAI key in the environment (the agent reads `OPENAI_API_KEY`):
 export OPENAI_API_KEY=sk-...
 ```
 
-Per-stage models are pinned in `KoogAnalystSupport.kt` (`businessAnalysisModel` / `technicalDesignModel`
-/ `validationModel` / `finalizeModel`) and switched per node via `changeModel`.
+Per-stage models live in one place — `AnalystConfig.kt` (`AnalystModelConfig`) — and are switched per
+node via `changeModel`. Edit the defaults there, or override any single stage at launch with an
+environment variable holding an OpenAI model id (resolved against `OpenAIModels`; an unknown id keeps
+the default):
+
+```sh
+export ANALYST_MODEL_BUSINESS_ANALYSIS=gpt-4o   # intake + clarifying-questions form
+export ANALYST_MODEL_TECHNICAL_DESIGN=o3        # ADR / UX-spec writing (reasoning model)
+export ANALYST_MODEL_VALIDATION=gpt-4o          # self-healing validation loop
+export ANALYST_MODEL_FINALIZE=gpt-4o            # long-term-memory distillation
+```
 
 Build the indexer once (the post-commit hook launches its executable jar), then install the hook
 (it lives outside version control under `.git/`):
@@ -78,7 +87,11 @@ The agent is split across three modules:
 - `AnalystSupport.kt` — `AgentSupport`; advertises capabilities and mints a session per ACP session.
 - `AnalystSession.kt` — `AgentSession`; the phase machine and the per-stage Koog graphs.
 - `AnalystRenderers.kt` — pure presentation helpers for the artifacts streamed to chat.
-- `AnalystTools.kt` — filesystem/lint/shell tools, the hydration retriever, and long-term memory.
+- `AnalystConfig.kt` — `AnalystModelConfig`: per-stage model selection with `ANALYST_MODEL_*` overrides.
+- `AnalystTools.kt` — the domain-specific `lint_markdown_docs` tool, the hydration retriever, and
+  long-term memory. Generic file IO and shell access use Koog's built-in tools (`ReadFileTool`,
+  `WriteFileTool`, `EditFileTool`, `ListDirectoryTool`, `ExecuteShellCommandTool`) from `agents-ext`,
+  registered in `AnalystSession.kt`.
 - `AnalystModel.kt` — serializable structured types (`RequirementsDraft`, `ValidationReport`, `ArchitectureMemo`, …).
 
 **`indexing/`** — the shared committed-design RAG index domain (the single source of truth for the

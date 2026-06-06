@@ -62,3 +62,5 @@ kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "a
 koog = { module = "ai.koog:koog-agents", version.ref = "koog" }
 koog-agents-features-acp = { module = "ai.koog:agents-features-acp", version.ref = "koog-additions"}
 koog-agents-additions = { module = "ai.koog:koog-agents-additions", version.ref = "koog-additions" }
+# Koog's built-in agent tools (file IO, shell) — published on the beta line. See docs.koog.ai/tools/built-in-tools.
+koog-agents-ext = { module = "ai.koog:agents-ext", version.ref = "koog-additions" }

@@ -3,131 +3,32 @@ package io.thisismo.vego.agent
 import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
 import io.thisismo.vego.agent.indexing.RagIndexReader
-import java.io.File
-import java.util.concurrent.TimeUnit
 import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
-import kotlin.io.path.createFile
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.pathString
 import kotlin.io.path.readText
-import kotlin.io.path.relativeTo
 import kotlin.io.path.writeText
 
 /**
- * Local system tools exposed to the agent. All paths are absolute — the workspace root is given to
- * the model in the system prompt so it can resolve them.
+ * Domain-specific tools and retrieval helpers exposed to the agent.
+ *
+ * Generic filesystem and shell access come from Koog's built-in tools (`ReadFileTool`,
+ * `WriteFileTool`, `EditFileTool`, `ListDirectoryTool`, `ExecuteShellCommandTool` — registered in
+ * [KoogAnalystSession]); this file keeps only what is specific to the analyst workflow. All paths are
+ * absolute — the workspace root is given to the model in the system prompt so it can resolve them.
  *
  * In the rethought, human-centric Git workflow the agent **never commits**: it writes specification
  * documents straight into the working directory (Workflow 1), then self-heals them against a
- * deterministic linter (Workflow 2) before handing off to the user. So these tools back:
- *  - TechnicalDesign — write ADRs to `docs/adr` and UI/UX specs to `docs/ux-specs`;
+ * deterministic linter (Workflow 2) before handing off to the user. So this file backs:
+ *  - Hydration — [hydrateDomainContext] retrieves prior context (memory + index + workspace docs);
  *  - Self-healing validation — [lintMarkdownDocs] reports broken links the agent then repairs;
- *  - Finalize — distil a durable [ArchitectureMemo] into the agent's long-term memory.
- * No tool stages, commits, or otherwise mutates Git history.
+ *  - Finalize — [persistArchitectureMemory] distils a durable memo into long-term memory.
+ * Nothing here commits or otherwise mutates Git history.
  */
-
-@Tool(customName = "list_directory")
-@LLMDescription("Lists entries under an absolute directory path, recursing up to the given depth.")
-fun listDirectory(
-    @LLMDescription("Absolute path of the directory to list") absolutePath: String,
-    @LLMDescription("How many levels deep to recurse (>= 1)") depth: Int = 1,
-): List<String> {
-    require(depth > 0) { "Depth must be at least 1 (got $depth)" }
-
-    val rootPath = Path(absolutePath)
-    require(rootPath.exists()) { "Path does not exist: $absolutePath" }
-    require(rootPath.isDirectory()) { "Path is not a directory: $absolutePath" }
-
-    val result = mutableListOf<String>()
-
-    fun walk(current: java.nio.file.Path, currentDepth: Int) {
-        if (currentDepth > depth) return
-        current.listDirectoryEntries().forEach { entry ->
-            result += entry.relativeTo(rootPath).pathString
-            if (entry.isDirectory() && currentDepth < depth) {
-                walk(entry, currentDepth + 1)
-            }
-        }
-    }
-
-    walk(rootPath, 1)
-    return result.sorted()
-}
-
-@Tool(customName = "read_file")
-@LLMDescription("Reads and returns the full text content of an absolute file path.")
-fun readFile(
-    @LLMDescription("Absolute path of the file to read") absolutePath: String,
-): String {
-    val path = Path(absolutePath)
-    require(path.exists()) { "Path does not exist: $absolutePath" }
-    require(path.isRegularFile()) { "Path is not a regular file: $absolutePath" }
-    return path.readText()
-}
-
-@Tool(customName = "write_file")
-@LLMDescription("Writes text to an absolute file path, creating parent directories and overwriting any existing file.")
-fun writeFile(
-    @LLMDescription("Absolute path of the file to write") absolutePath: String,
-    @LLMDescription("The full text content to write") content: String,
-): String {
-    val path = Path(absolutePath)
-    path.parent?.createDirectories()
-    path.writeText(content)
-    return "Wrote ${content.length} characters to $absolutePath"
-}
-
-@Tool(customName = "edit_file")
-@LLMDescription("Replaces the first occurrence of an exact substring in a file. Creates the file if missing.")
-fun editFile(
-    @LLMDescription("Absolute path of the file to edit") absolutePath: String,
-    @LLMDescription("The exact text to find") original: String,
-    @LLMDescription("The text to replace it with") replacement: String,
-): String {
-    val path = Path(absolutePath)
-    if (!path.exists()) {
-        path.parent?.createDirectories()
-        path.createFile()
-    }
-    require(path.isRegularFile()) { "Path is not a regular file: $absolutePath" }
-
-    val content = path.readText()
-    require(original in content) { "Original text not found in file: $absolutePath" }
-    path.writeText(content.replace(original, replacement))
-    return "Edited $absolutePath"
-}
-
-@Tool(customName = "run_shell_command")
-@LLMDescription(
-    "Runs a read-only/local validation shell command in the given working directory and returns its " +
-        "exit code together with combined stdout/stderr. Use this for ad-hoc local checks (e.g. a " +
-        "documentation build or a markdown tool). NEVER use it to stage, commit, push, or otherwise " +
-        "mutate Git history — the human reviews and commits the changes manually."
-)
-fun runShellCommand(
-    @LLMDescription("Absolute path of the working directory to run the command in") workingDirectory: String,
-    @LLMDescription("The shell command line to execute, e.g. 'ls docs/adr' or 'mkdocs build --strict'") command: String,
-): String {
-    val workdir = File(workingDirectory)
-    require(workdir.isDirectory) { "Working directory does not exist: $workingDirectory" }
-
-    val process = ProcessBuilder("/bin/sh", "-c", command)
-        .directory(workdir)
-        .redirectErrorStream(true)
-        .start()
-
-    val output = process.inputStream.bufferedReader().readText()
-    val finished = process.waitFor(120, TimeUnit.SECONDS)
-    if (!finished) {
-        process.destroyForcibly()
-        return "exit=timeout (command exceeded 120s)\n$output"
-    }
-    return "exit=${process.exitValue()}\n$output"
-}
 
 // =====================================================================================
 // Workflow 1 — Hydration / retrieval
