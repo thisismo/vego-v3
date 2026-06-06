@@ -1,6 +1,5 @@
 package io.thisismo.vego.agent
 
-import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import ai.koog.utils.time.KoogClock
 import com.agentclientprotocol.agent.Agent
 import com.agentclientprotocol.protocol.Protocol
@@ -39,9 +38,14 @@ suspend fun main() = coroutineScope {
         output = BufferedOutputStream(System.out).asSink().buffered(),
         name = "agent",
     )
-    val promptExecutor = simpleOpenAIExecutor(apiKey)
+    // Wrap the OpenAI client in Koog's RetryingLLMClient so every LLM call the agent makes
+    // (structured requests, streaming design/validation, persona-pool evaluations) retries transient
+    // failures with exponential backoff + jitter. Tunable via ANALYST_RETRY_* — see AnalystExecutor.kt.
+    val promptExecutor = resilientOpenAIExecutor(apiKey)
     // Per-stage models: defaults live in AnalystModelConfig, overridable via ANALYST_MODEL_<STAGE> env vars.
     val models = AnalystModelConfig.fromEnvironment()
+    // Data-driven decision pool: personas are declared in resources/personas.conf (HOCON).
+    val personaPool = PersonaPoolConfig.load()
 
     agentTransport.use { agentTransport ->
         val agentJob = launch {
@@ -54,6 +58,7 @@ suspend fun main() = coroutineScope {
                     promptExecutor = promptExecutor,
                     clock = KoogClock.System,
                     models = models,
+                    personaPool = personaPool,
                 ),
             )
 

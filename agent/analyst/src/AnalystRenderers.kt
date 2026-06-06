@@ -4,6 +4,9 @@ package io.thisismo.vego.agent
  * Plain-text/Markdown renderers for the artifacts the analyst session streams to the IDE chat, plus
  * the small affirmative-reply heuristic the finalize turn uses. These are pure presentation helpers,
  * kept separate from the phase machine in [KoogAnalystSession] so that file stays about control flow.
+ *
+ * Domain-model and consensus dashboards live in [ConsensusRenderers]; this file holds the validation
+ * review (HitL Pause 2) and the long-term-memory memo.
  */
 
 /** Whether the user's reply confirms finalization. */
@@ -12,46 +15,6 @@ internal fun isAffirmative(text: String): Boolean {
     return "finalize" in t || "finalise" in t || "looks good" in t || "wrap it up" in t ||
         "approve" in t || "lgtm" in t || "ship it" in t || t == "yes" || t == "y" || t == "ok"
 }
-
-internal fun renderRequirementsForm(draft: RequirementsDraft): String = buildString {
-    appendLine("## Drafted requirements")
-    appendLine()
-    appendLine(draft.summary)
-    appendLine()
-    appendLine("### Epics")
-    draft.epics.forEachIndexed { i, epic ->
-        appendLine("${i + 1}. **${epic.title}** — ${epic.description}")
-        epic.acceptanceCriteria.forEach { appendLine("   - [ ] $it") }
-    }
-    if (draft.outOfScope.isNotEmpty()) {
-        appendLine()
-        appendLine("### Out of scope")
-        draft.outOfScope.forEach { appendLine("- $it") }
-    }
-    appendLine()
-    appendLine("### ❓ Please answer to continue (HitL form)")
-    draft.clarifyingQuestions.forEach { q ->
-        appendLine("- **${q.id}** (${q.kind}): ${q.question}")
-        if (q.options.isNotEmpty()) appendLine("    options: ${q.options.joinToString(" | ")}")
-    }
-    appendLine()
-    appendLine("_Reply with your answers (e.g. `q1: ...`, `q2: ...`) to start technical design._")
-}
-
-internal fun renderDraftText(draft: RequirementsDraft): String = buildString {
-    appendLine("Summary: ${draft.summary}")
-    appendLine("Epics:")
-    draft.epics.forEach { epic ->
-        appendLine("- ${epic.title}: ${epic.description}")
-        epic.acceptanceCriteria.forEach { appendLine("    * AC: $it") }
-    }
-    if (draft.outOfScope.isNotEmpty()) appendLine("Out of scope: ${draft.outOfScope.joinToString("; ")}")
-}
-
-internal fun renderQuestions(draft: RequirementsDraft): String =
-    draft.clarifyingQuestions.joinToString("\n") { q ->
-        "${q.id} (${q.kind}): ${q.question}" + if (q.options.isNotEmpty()) " [${q.options.joinToString(" | ")}]" else ""
-    }
 
 internal fun renderReview(report: ValidationReport): String = buildString {
     appendLine(if (report.passed) "## ✅ Specifications ready for review" else "## ⚠️ Specifications drafted (validation found issues)")

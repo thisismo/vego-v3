@@ -2,9 +2,11 @@ package io.thisismo.vego.agent
 
 import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
+import ai.koog.agents.core.tools.reflect.ToolSet
 import io.thisismo.vego.agent.indexing.RagIndexReader
 import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
+import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
@@ -26,6 +28,9 @@ import kotlin.io.path.writeText
  * deterministic linter (Workflow 2) before handing off to the user. So this file backs:
  *  - Hydration — [hydrateDomainContext] retrieves prior context (memory + index + workspace docs);
  *  - Self-healing validation — [lintMarkdownDocs] reports broken links the agent then repairs;
+ *  - Reconciliation — [specDocPaths]/[renderSpecDocInventory] tell the design/revise loop what is
+ *    already staged, and [SpecDocTools] lets it *delete* a draft a rejected round left behind (Koog's
+ *    built-ins cover read/write/edit but not deletion);
  *  - Finalize — [persistArchitectureMemory] distils a durable memo into long-term memory.
  * Nothing here commits or otherwise mutates Git history.
  */
@@ -123,12 +128,23 @@ private fun readCommittedDesignIndex(root: java.nio.file.Path): String? {
 /** A single problem found in a drafted document. */
 data class DocFinding(val file: String, val message: String)
 
+/** Mermaid fenced code block: ```mermaid \n <body> \n ``` — captures the body for diagram validation. */
+private val mermaidFenceRegex = Regex("""```mermaid\s*\n(.*?)```""", setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE))
+
+/** Diagram types Mermaid recognizes; a fence whose first token isn't one of these won't render. */
+private val mermaidDiagramKeywords = setOf(
+    "graph", "flowchart", "sequenceDiagram", "classDiagram", "stateDiagram", "stateDiagram-v2",
+    "erDiagram", "journey", "gantt", "pie", "mindmap", "timeline", "gitGraph", "quadrantChart",
+    "requirementDiagram", "C4Context", "C4Container", "C4Component", "C4Dynamic", "C4Deployment",
+)
+
 /**
- * Validates every Markdown file under the given directories: flags empty files and broken relative
- * links (links whose target file does not exist on disk). External links, mail links and pure
- * anchors are ignored. This is the deterministic checker that backs both the agent-facing
- * [lintMarkdownDocs] tool and the authoritative [ValidationReport] — the "test" half of the
- * self-healing loop, so the report the user eventually sees cannot be hallucinated.
+ * Validates every Markdown file under the given directories: flags empty files, broken relative
+ * links (links whose target file does not exist on disk), and malformed Mermaid diagrams (empty
+ * fences or an unrecognized diagram type — the C4 Context/Container diagrams are written as Mermaid).
+ * External links, mail links and pure anchors are ignored. This is the deterministic checker that
+ * backs both the agent-facing [lintMarkdownDocs] tool and the authoritative [ValidationReport] — the
+ * "test" half of the self-healing loop, so the report the user eventually sees cannot be hallucinated.
  */
 fun validateMarkdownDocs(directories: List<String>): Pair<List<String>, List<DocFinding>> {
     val linkRegex = Regex("""!?\[[^\]]*]\(([^)\s]+)(?:\s+"[^"]*")?\)""")
@@ -157,6 +173,25 @@ fun validateMarkdownDocs(directories: List<String>): Pair<List<String>, List<Doc
                         findings += DocFinding(file.absolutePath, "Broken relative link: '$rawTarget'")
                     }
                 }
+                mermaidFenceRegex.findAll(text).forEach { match ->
+                    val body = match.groupValues[1].trim()
+                    if (body.isEmpty()) {
+                        findings += DocFinding(file.absolutePath, "Empty Mermaid diagram block.")
+                        return@forEach
+                    }
+                    val firstToken = body.lineSequence()
+                        .map { it.trim() }
+                        .firstOrNull { it.isNotEmpty() && !it.startsWith("%%") } // skip Mermaid comments
+                        ?.substringBefore(' ')
+                        .orEmpty()
+                    if (mermaidDiagramKeywords.none { it.equals(firstToken, ignoreCase = true) }) {
+                        findings += DocFinding(
+                            file.absolutePath,
+                            "Mermaid diagram has unrecognized type '$firstToken' (expected one of: " +
+                                "${mermaidDiagramKeywords.joinToString(", ")}).",
+                        )
+                    }
+                }
             }
     }
     return files to findings
@@ -164,9 +199,10 @@ fun validateMarkdownDocs(directories: List<String>): Pair<List<String>, List<Doc
 
 @Tool(customName = "lint_markdown_docs")
 @LLMDescription(
-    "Validates every Markdown file under the given absolute directory for empty files and broken " +
-        "relative links. Returns 'OK — no issues found.' when clean, otherwise a numbered list of " +
-        "issues to fix. Call this after writing docs and re-call it after each fix until it returns OK."
+    "Validates every Markdown file under the given absolute directory for empty files, broken " +
+        "relative links, and malformed Mermaid diagrams (empty or unrecognized C4/diagram type). " +
+        "Returns 'OK — no issues found.' when clean, otherwise a numbered list of issues to fix. " +
+        "Call this after writing docs and re-call it after each fix until it returns OK."
 )
 fun lintMarkdownDocs(
     @LLMDescription("Absolute path of the directory whose Markdown files should be validated") absoluteDirectory: String,
@@ -176,6 +212,86 @@ fun lintMarkdownDocs(
     return buildString {
         appendLine("${findings.size} issue(s) found:")
         findings.forEachIndexed { i, f -> appendLine("${i + 1}. ${f.file}: ${f.message}") }
+    }
+}
+
+// =====================================================================================
+// Workflow 2b — spec-doc reconciliation (inventory + scoped deletion)
+// =====================================================================================
+
+/**
+ * Absolute paths of every Markdown spec document currently staged under the given directories.
+ *
+ * The design/revise loop uses this two ways: as the baseline captured before the first design round
+ * (the *committed* docs that must be preserved), and as the live inventory of what is on disk now.
+ * The set difference between them is exactly "the drafts this session staged" — the files a rejected
+ * round must reconcile or delete instead of orphaning.
+ */
+fun specDocPaths(directories: List<String>): List<String> =
+    directories.map { Path(it) }
+        .filter { it.exists() && it.isDirectory() }
+        .flatMap { dir ->
+            dir.toFile().walkTopDown()
+                .filter { it.isFile && it.extension.lowercase() in setOf("md", "markdown") }
+                .map { it.absolutePath }
+                .toList()
+        }
+        .sorted()
+
+/**
+ * Renders [absolutePaths] as a compact, model-facing inventory — absolute path, workspace-relative
+ * path, and the document's first heading — so the design task can decide, per file, whether to update
+ * it in place, supersede it, or delete it. Returns null when the list is empty.
+ */
+fun renderSpecDocInventory(workspaceRoot: String, absolutePaths: List<String>): String? {
+    if (absolutePaths.isEmpty()) return null
+    val root = Path(workspaceRoot)
+    return absolutePaths.joinToString("\n") { abs ->
+        val path = Path(abs)
+        val rel = runCatching { root.relativize(path).pathString }.getOrDefault(abs)
+        val heading = runCatching {
+            path.toFile().bufferedReader().useLines { lines -> lines.firstOrNull { it.startsWith("#") }?.trim() }
+        }.getOrNull().orEmpty()
+        "- $abs ($rel)${if (heading.isNotBlank()) " — $heading" else ""}"
+    }
+}
+
+/**
+ * The mutation tool that *removes* a staged spec document — the deletion primitive Koog's built-in
+ * file tools omit. The design/revise loop uses it to retire an ADR (or other draft) that a previous,
+ * rejected round wrote but the current decisions no longer need, so stale drafts can't accumulate as
+ * orphans the validation report would then present as "passing".
+ *
+ * Deletion is hard-scoped to the [allowedDirectories] (the spec dirs) passed at construction: a
+ * request to delete anything outside them is refused, so the tool can never be turned on the rest of
+ * the workspace or on Git's own files — the agent still has no path to mutating history.
+ */
+class SpecDocTools(allowedDirectories: List<String>) : ToolSet {
+    private val allowedRoots = allowedDirectories.map { Path(it).toAbsolutePath().normalize() }
+
+    @Tool(customName = "delete_spec_doc")
+    @LLMDescription(
+        "Deletes a single staged specification document by absolute path. Use it to retire an ADR or " +
+            "other draft that a previous, rejected round produced but the revised decisions no longer " +
+            "need — do NOT recreate a rejected draft under a new name, delete it. Deletion is restricted " +
+            "to the docs/adr, docs/c4 and docs/ux-specs directories; any path outside them is refused. " +
+            "Returns a confirmation, or an error message to act on."
+    )
+    fun deleteSpecDoc(
+        @LLMDescription("Absolute path of the spec document (.md) to delete") absolutePath: String,
+    ): String {
+        val target = runCatching { Path(absolutePath).toAbsolutePath().normalize() }
+            .getOrElse { return "Refused: '$absolutePath' is not a valid path." }
+        if (allowedRoots.none { target.startsWith(it) }) {
+            return "Refused: '$absolutePath' is outside the spec directories; only documents under " +
+                "docs/adr, docs/c4 and docs/ux-specs may be deleted."
+        }
+        if (!target.exists()) return "No file at '$absolutePath' — nothing to delete."
+        if (!target.isRegularFile()) return "Refused: '$absolutePath' is not a regular file."
+        return runCatching {
+            target.deleteIfExists()
+            "Deleted $absolutePath."
+        }.getOrElse { e -> "Failed to delete '$absolutePath': ${e.message ?: e::class.simpleName}" }
     }
 }
 

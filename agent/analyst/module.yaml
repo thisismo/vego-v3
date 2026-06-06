@@ -17,6 +17,8 @@ dependencies:
   # ACP speaks newline-delimited JSON-RPC over stdio, which needs kotlinx-io sources/sinks.
   - org.jetbrains.kotlinx:kotlinx-io-core:0.9.0
   - $libs.kotlinx.coroutines.core
+  # HOCON parser for the data-driven persona pool (resources/personas.conf -> PersonaDefinition).
+  - com.typesafe:config:1.4.3
   # SLF4J backend so Koog/ACP logging goes to stderr (stdout is reserved for the protocol).
   - $libs.logging.logback.classic
 
