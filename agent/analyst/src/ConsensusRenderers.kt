@@ -33,17 +33,23 @@ internal fun renderDomainModel(model: DomainModel): String = buildString {
 
 /**
  * Renders the Conflict Report as the Consensus Dashboard for HitL Pause 1: a persona confidence
- * matrix, the per-context standing, the debate summary (blockers + open concerns), and a prompt for
- * the human's tie-breaking directive. State routes back to the Consensus Engine after the reply.
+ * matrix, the per-context standing, the debate summary (blockers + open concerns + counter-proposals),
+ * and a prompt for the human's tie-breaking directive. State routes back to the Consensus Engine after
+ * the reply. [debateRounds] is the number of simulated-debate rounds the pool ran before settling
+ * (0 when it converged on the first pass).
  */
-internal fun renderConflictReport(model: DomainModel, report: ConflictReport): String = buildString {
-    val status = if (report.deadlocked) "⛔ Deadlock — moderation needed" else "🟢 Pool converged"
+internal fun renderConflictReport(model: DomainModel, report: ConflictReport, debateRounds: Int = 0): String = buildString {
+    val status = if (report.deadlocked) "${Ui.DEADLOCK} Deadlock — moderation needed" else "${Ui.CONVERGED} Pool converged"
     appendLine("## Consensus dashboard — $status")
     appendLine()
     appendLine(
         "Strategy **${report.strategy}** · overall weighted confidence " +
             "**${report.overallWeightedConfidence}%** across ${report.matrix.size} personas."
     )
+    if (debateRounds > 0) {
+        val outcome = if (report.deadlocked) "still split after" else "settled after"
+        appendLine("_The pool $outcome ${debateRounds} simulated-debate round(s)._")
+    }
     appendLine()
 
     appendLine("### Domain model under review")
@@ -72,7 +78,7 @@ internal fun renderConflictReport(model: DomainModel, report: ConflictReport): S
     appendLine()
 
     if (report.blockers.isNotEmpty()) {
-        appendLine("### ⛔ Hard blockers")
+        appendLine("### ${Ui.BLOCK} Hard blockers")
         report.blockers.forEach { appendLine("- $it") }
         appendLine()
     }
@@ -87,6 +93,12 @@ internal fun renderConflictReport(model: DomainModel, report: ConflictReport): S
     if (report.openConcerns.isNotEmpty()) {
         appendLine("### Open concerns")
         report.openConcerns.forEach { appendLine("- $it") }
+        appendLine()
+    }
+
+    if (report.counterProposals.isNotEmpty()) {
+        appendLine("### ${Ui.PROPOSAL} Counter-proposals on the table")
+        report.counterProposals.forEach { appendLine("- $it") }
         appendLine()
     }
 
@@ -106,7 +118,32 @@ internal fun renderConflictReport(model: DomainModel, report: ConflictReport): S
 }
 
 private fun verdictBadge(verdict: Verdict): String = when (verdict) {
-    Verdict.APPROVE -> "✅ approve"
-    Verdict.APPROVE_WITH_CONCERNS -> "🟡 concerns"
-    Verdict.BLOCK -> "⛔ block"
+    Verdict.APPROVE -> "${Ui.APPROVE} approve"
+    Verdict.APPROVE_WITH_CONCERNS -> "${Ui.CONCERNS} concerns"
+    Verdict.BLOCK -> "${Ui.BLOCK} block"
+}
+
+/**
+ * A terse, prompt-only digest of the consensus standing — the decisions, the blockers, and the
+ * counter-proposals, without the dashboard's tables and prose. Used to seed the design and finalize
+ * prompts so the standing travels as a few dense lines instead of the full Markdown dashboard the
+ * *user* sees, keeping the model's context window small. The rich [renderConflictReport] stays the
+ * face shown at HitL Pause 1.
+ */
+internal fun renderConsensusFacts(model: DomainModel, report: ConflictReport): String = buildString {
+    val state = if (report.deadlocked) "deadlocked" else "converged"
+    appendLine("Consensus ($state) — overall weighted confidence ${report.overallWeightedConfidence}% via ${report.strategy}.")
+    appendLine("Bounded-context standing:")
+    report.contexts.forEach { ctx ->
+        val flag = if (ctx.blocking) "BLOCKING" else "clear"
+        appendLine("- ${ctx.boundedContext}: ${ctx.weightedConfidence}% ($flag)")
+    }
+    if (report.blockers.isNotEmpty()) {
+        appendLine("Hard blockers:")
+        report.blockers.forEach { appendLine("- $it") }
+    }
+    if (report.counterProposals.isNotEmpty()) {
+        appendLine("Counter-proposals:")
+        report.counterProposals.forEach { appendLine("- $it") }
+    }
 }

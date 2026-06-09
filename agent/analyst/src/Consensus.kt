@@ -59,6 +59,8 @@ data class ConflictReport(
     val blockers: List<String>,
     /** Non-blocking concerns gathered across the pool. */
     val openConcerns: List<String>,
+    /** Concrete counter-proposals the personas put on the table — the constructive half of the debate. */
+    val counterProposals: List<String> = emptyList(),
     /** The confidence matrix — one row per persona — for the dashboard. */
     val matrix: List<PersonaScoreRow>,
 )
@@ -118,6 +120,10 @@ class WeightedMatrixConsensus(
             .flatMap { v -> v.evaluation.concerns.map { "${v.persona.role}: $it" } }
             .distinct()
 
+        val counterProposals = verdicts
+            .flatMap { v -> v.evaluation.counterProposals.map { "${v.persona.role}: $it" } }
+            .distinct()
+
         val deadlocked = verdicts.any { it.evaluation.verdict == Verdict.BLOCK } || contexts.any { it.blocking }
 
         return ConflictReport(
@@ -127,6 +133,7 @@ class WeightedMatrixConsensus(
             contexts = contexts,
             blockers = blockers,
             openConcerns = openConcerns,
+            counterProposals = counterProposals,
             matrix = verdicts.map {
                 PersonaScoreRow(it.persona.id, it.persona.role, it.evaluation.verdict, it.evaluation.overallConfidence)
             },

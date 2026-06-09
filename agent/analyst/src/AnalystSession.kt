@@ -17,7 +17,7 @@ import ai.koog.agents.ext.tool.shell.BraveModeConfirmationHandler
 import ai.koog.agents.ext.tool.shell.ExecuteShellCommandTool
 import ai.koog.agents.ext.tool.shell.JvmShellCommandExecutor
 import ai.koog.agents.features.acp.AcpAgent
-import ai.koog.agents.features.acp.withAcpAgent
+import ai.koog.agents.features.eventHandler.feature.EventHandler
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.rag.base.files.JVMFileSystemProvider
@@ -26,14 +26,12 @@ import com.agentclientprotocol.agent.AgentSession
 import com.agentclientprotocol.common.Event
 import com.agentclientprotocol.model.ContentBlock
 import com.agentclientprotocol.model.SessionId
-import com.agentclientprotocol.model.SessionUpdate
 import com.agentclientprotocol.protocol.Protocol
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.sync.Mutex
@@ -118,6 +116,9 @@ class KoogAnalystSession(
     private var conflictReport: ConflictReport? = null
     private var validationReport: ValidationReport? = null
 
+    /** How many simulated-debate rounds the pool ran before settling — surfaced on the dashboard. */
+    private var debateRounds: Int = 0
+
     /**
      * The spec docs already on disk when this session first entered design — the *committed* baseline
      * from earlier sessions. Captured once (lazily) so the design/revise loop can tell those docs
@@ -139,6 +140,10 @@ class KoogAnalystSession(
 
         logger.info { "Session $sessionId received prompt in phase $phase" }
 
+        // The single user-facing emit path for this turn: curated dashboards/headers plus the concise
+        // tool-progress lines wired into each agent's EventHandler (see buildAgent).
+        val reporter = ProgressReporter(this@channelFlow, workspaceRoot)
+
         agentMutex.withLock {
             agentJob = async {
                 // Retries are handled one layer down by the RetryingLLMClient (see resilientOpenAIExecutor).
@@ -148,18 +153,17 @@ class KoogAnalystSession(
                 // leaves [phase] intact and the user can simply resend to retry the same step.
                 try {
                     when (phase) {
-                        Phase.INTAKE -> runIntake(this@channelFlow, text)
-                        Phase.AWAITING_MODERATION -> runModerationAndDesign(this@channelFlow, text)
-                        Phase.AWAITING_FINALIZE -> runFinalize(this@channelFlow, text)
-                        Phase.DONE -> emitMessage(this@channelFlow, "This analysis session is complete. Start a new session to analyze another idea.")
+                        Phase.INTAKE -> runIntake(reporter, text)
+                        Phase.AWAITING_MODERATION -> runModerationAndDesign(reporter, text)
+                        Phase.AWAITING_FINALIZE -> runFinalize(reporter, text)
+                        Phase.DONE -> reporter.message("This analysis session is complete. Start a new session to analyze another idea.")
                     }
                 } catch (c: CancellationException) {
                     throw c
                 } catch (e: Throwable) {
                     logger.error(e) { "Session $sessionId failed during phase $phase" }
-                    emitMessage(
-                        this@channelFlow,
-                        "⚠️ Something went wrong while processing this step (${e.message ?: e::class.simpleName}). " +
+                    reporter.message(
+                        "${Ui.WARN} Something went wrong while ${phase.activity()} (${e.message ?: e::class.simpleName}). " +
                             "The retries built into the agent could not recover — this is usually a transient API or " +
                             "rate-limit issue. Resend your last message to retry this step.",
                     )
@@ -167,6 +171,14 @@ class KoogAnalystSession(
             }
             agentJob?.await()
         }
+    }
+
+    /** A human-readable description of what a phase was doing, for failure messages. */
+    private fun Phase.activity(): String = when (this) {
+        Phase.INTAKE -> "modeling the domain and consulting the persona pool"
+        Phase.AWAITING_MODERATION -> "reconciling consensus and drafting the specifications"
+        Phase.AWAITING_FINALIZE -> "distilling the session into long-term memory"
+        Phase.DONE -> "closing the session"
     }
 
     override suspend fun cancel() {
@@ -177,7 +189,7 @@ class KoogAnalystSession(
     // =====================================================================================
     // Turn 1 — Nodes 1-4: Hydration + Ubiquitous Language, Domain Modeling, Pool, Consensus
     // =====================================================================================
-    private suspend fun runIntake(producer: ProducerScope<Event>, idea: String) {
+    private suspend fun runIntake(reporter: ProgressReporter, idea: String) {
         val config = AIAgentConfig(
             prompt = prompt("ddd-modeling") {
                 system(
@@ -198,6 +210,7 @@ class KoogAnalystSession(
         val strategy = strategy<String, Unit>("ddd-modeling") {
             // Node 1 — Context Hydration: ground the model in retrieved domain context (memory + index + docs).
             val hydrate by node<String, String>("hydration") { rawIdea ->
+                reporter.step("${Ui.HYDRATE} Hydrating domain context from memory, the design index, and the workspace…")
                 val context = hydrateDomainContext(workspaceRoot)
                 """
                 DOMAIN CONTEXT (retrieved from long-term memory, the committed-design index, and the workspace):
@@ -218,6 +231,7 @@ class KoogAnalystSession(
             // Persist the drafted model for the pool and for the suspended turns.
             val storeModel by node<DomainModel, DomainModel>("store-model") { model ->
                 domainModel = model
+                reporter.step("${Ui.MODEL} Domain model drafted — ${model.boundedContexts.size} bounded context(s). Consulting the pool…")
                 model
             }
 
@@ -225,16 +239,19 @@ class KoogAnalystSession(
             // The fan-out is a single node running the configured personas concurrently, because Koog's
             // `parallel()` needs statically-declared nodes whereas the pool size is config-driven.
             val poolConsensus by node<DomainModel, ConflictReport>("persona-pool-consensus") { model ->
+                reporter.step("${Ui.POOL} ${personaPool.size} personas reviewing the model independently…")
                 var verdicts = personaPool.evaluate(model)
                 var report = consensus.synthesize(verdicts, model)
                 var round = 0
                 while (report.deadlocked && round < MAX_DEBATE_ROUNDS) {
                     round++
                     logger.info { "Pool deadlocked; running debate round $round/$MAX_DEBATE_ROUNDS." }
+                    reporter.step("${Ui.DEBATE} Debate round $round/$MAX_DEBATE_ROUNDS — personas reconciling the disagreement…")
                     val debateContext = renderConflictReport(model, report)
                     verdicts = personaPool.evaluate(model, debateContext)
                     report = consensus.synthesize(verdicts, model)
                 }
+                debateRounds = round
                 report
             }
 
@@ -242,13 +259,7 @@ class KoogAnalystSession(
             val emitReport by node<ConflictReport, Unit>("conflict-report") { report ->
                 conflictReport = report
                 phase = Phase.AWAITING_MODERATION
-                withAcpAgent {
-                    sendEvent(
-                        Event.SessionUpdateEvent(
-                            SessionUpdate.AgentMessageChunk(ContentBlock.Text(renderConflictReport(domainModel!!, report)))
-                        )
-                    )
-                }
+                reporter.message(renderConflictReport(domainModel!!, report, debateRounds))
             }
 
             nodeStart then hydrate then modelDomain
@@ -257,19 +268,20 @@ class KoogAnalystSession(
             edge(emitReport forwardTo nodeFinish)
         }
 
-        buildAgent(producer, config, strategy, intakeToolRegistry(), streamDefaults = false).run(idea)
+        buildAgent(reporter, config, strategy, intakeToolRegistry()).run(idea)
     }
 
     // =====================================================================================
     // Turn 2 — Dynamic re-routing to consensus, then Nodes 6-8: Technical Design + Validation
     // =====================================================================================
-    private suspend fun runModerationAndDesign(producer: ProducerScope<Event>, directive: String) {
+    private suspend fun runModerationAndDesign(reporter: ProgressReporter, directive: String) {
         val model = domainModel
         val priorReport = conflictReport
         if (model == null || priorReport == null) {
-            emitMessage(producer, "No domain model found for this session — please restart.")
+            reporter.message("No domain model found for this session — please restart.")
             return
         }
+        reporter.step("${Ui.DEBATE} Routing your directive through the pool, then drafting the specifications…")
 
         // Reconcile against what is already on disk. The first time we design, capture the committed
         // baseline (docs from earlier sessions — preserve them). On a revise round the baseline is
@@ -302,7 +314,7 @@ class KoogAnalystSession(
                     """.trimIndent()
                 )
                 user("AGREED DOMAIN MODEL:\n${renderDomainModel(model)}")
-                user("CONSENSUS STANDING BEFORE MODERATION:\n${renderConflictReport(model, priorReport)}")
+                user("CONSENSUS STANDING BEFORE MODERATION:\n${renderConsensusFacts(model, priorReport)}")
             },
             // Base model for the cheap framing nodes; the graph switches to the reasoning model for
             // design and back to the fast model for the self-healing validation loop.
@@ -321,6 +333,9 @@ class KoogAnalystSession(
             // Dynamic re-routing — route the human directive back through the consensus engine to
             // finalize the agreement, then inject the result into the conversation for the design work.
             val reconcile by node<String, Unit>("reconcile-consensus") { humanDirective ->
+                reporter.step("${Ui.DEBATE} Re-running consensus after your steer…")
+                // The personas reconsider against the *full* dashboard (the rich debate context); only the
+                // agent's own prompt is seeded with the terse facts digest, to keep its context window lean.
                 val debateContext = buildString {
                     appendLine("HUMAN MODERATION DIRECTIVE:")
                     appendLine(humanDirective)
@@ -335,7 +350,7 @@ class KoogAnalystSession(
                 llm.writeSession {
                     appendPrompt {
                         user("HUMAN MODERATION DIRECTIVE:\n$humanDirective")
-                        user("FINALIZED CONSENSUS (after moderation):\n${renderConflictReport(model, finalReport)}")
+                        user("FINALIZED CONSENSUS (after moderation):\n${renderConsensusFacts(model, finalReport)}")
                     }
                 }
             }
@@ -345,11 +360,13 @@ class KoogAnalystSession(
 
             // Switch to the deep-reasoning model for the heavy specification work.
             val useDesignModel by node<Unit, Unit>("use-design-model") {
+                reporter.step("${Ui.DESIGN} Writing ADRs, C4 diagrams and UX specs into your working directory…")
                 llm.writeSession { changeModel(models.technicalDesign) }
             }
 
             // Switch back to the fast model for the self-healing validation loop.
             val useValidationModel by node<Unit, Unit>("use-validation-model") {
+                reporter.step("${Ui.VALIDATE} Validating and self-healing the drafted documents…")
                 llm.writeSession { changeModel(models.validation) }
             }
 
@@ -401,13 +418,7 @@ class KoogAnalystSession(
             val emitReview by node<ValidationReport, Unit>("finalize-prompt") { vr ->
                 validationReport = vr
                 phase = Phase.AWAITING_FINALIZE
-                withAcpAgent {
-                    sendEvent(
-                        Event.SessionUpdateEvent(
-                            SessionUpdate.AgentMessageChunk(ContentBlock.Text(renderReview(vr)))
-                        )
-                    )
-                }
+                reporter.message(renderReview(vr))
             }
 
             nodeStart then reconcile then compress then
@@ -416,18 +427,17 @@ class KoogAnalystSession(
             edge(emitReview forwardTo nodeFinish)
         }
 
-        buildAgent(producer, config, strategy, executionToolRegistry(), streamDefaults = true).run(directive)
+        buildAgent(reporter, config, strategy, executionToolRegistry()).run(directive)
     }
 
     // =====================================================================================
     // Turn 3 — Node 9: Finalize confirmation, long-term memory, cache flush (NO git)
     // =====================================================================================
-    private suspend fun runFinalize(producer: ProducerScope<Event>, decision: String) {
+    private suspend fun runFinalize(reporter: ProgressReporter, decision: String) {
         if (!isAffirmative(decision)) {
             // Revise — route back to moderation so the user can re-steer the consensus and regenerate.
             phase = Phase.AWAITING_MODERATION
-            emitMessage(
-                producer,
+            reporter.message(
                 "Understood — not finalizing yet. Reply with a refined directive or additional " +
                     "constraints and I'll re-route through the consensus engine, then reconcile the staged " +
                     "specifications against your steer — updating the drafts in place and removing any the " +
@@ -436,6 +446,7 @@ class KoogAnalystSession(
             return
         }
 
+        reporter.step("${Ui.MEMORY} Distilling the session into long-term memory…")
         val report = validationReport
         val docExcerpts = readDocExcerpts(report?.files.orEmpty())
 
@@ -451,7 +462,7 @@ class KoogAnalystSession(
                     """.trimIndent()
                 )
                 domainModel?.let { user("AGREED DOMAIN MODEL:\n${renderDomainModel(it)}") }
-                conflictReport?.let { user("FINALIZED CONSENSUS:\n${renderConflictReport(domainModel!!, it)}") }
+                conflictReport?.let { user("FINALIZED CONSENSUS:\n${renderConsensusFacts(domainModel!!, it)}") }
                 user("VALIDATED SPECIFICATION DOCUMENTS:\n$docExcerpts")
             },
             model = models.finalize,
@@ -480,19 +491,11 @@ class KoogAnalystSession(
 
             // 3. Print the closure message.
             val emitDone by node<Unit, Unit>("finalize-done") {
-                withAcpAgent {
-                    sendEvent(
-                        Event.SessionUpdateEvent(
-                            SessionUpdate.AgentMessageChunk(
-                                ContentBlock.Text(
-                                    "✅ Specification finalized. Session closed. The documents are in your " +
-                                        "working directory under `docs/adr`, `docs/c4`, and `docs/ux-specs` — review " +
-                                        "them in your IDE and run `git commit` whenever you're ready."
-                                )
-                            )
-                        )
-                    )
-                }
+                reporter.message(
+                    "${Ui.DONE} Specification finalized. Session closed. The documents are in your " +
+                        "working directory under `docs/adr`, `docs/c4`, and `docs/ux-specs` — review " +
+                        "them in your IDE and run `git commit` whenever you're ready."
+                )
             }
 
             nodeStart then distill
@@ -501,18 +504,17 @@ class KoogAnalystSession(
         }
 
         // Finalize reads/distils only — no file or shell tools are exposed.
-        buildAgent(producer, config, strategy, ToolRegistry {}, streamDefaults = false).run(decision)
+        buildAgent(reporter, config, strategy, ToolRegistry {}).run(decision)
     }
 
     // =====================================================================================
     // Helpers
     // =====================================================================================
     private fun buildAgent(
-        producer: ProducerScope<Event>,
+        reporter: ProgressReporter,
         config: AIAgentConfig,
         strategy: AIAgentGraphStrategy<String, Unit>,
         toolRegistry: ToolRegistry,
-        streamDefaults: Boolean,
     ): AIAgent<String, Unit> = AIAgent(
         promptExecutor = promptExecutor,
         strategy = strategy,
@@ -523,10 +525,18 @@ class KoogAnalystSession(
         install(AcpAgent) {
             this.sessionId = this@KoogAnalystSession.sessionId.value
             this.protocol = this@KoogAnalystSession.protocol
-            this.eventsProducer = producer
-            // During tool-heavy phases (design/validation) stream tool calls and thoughts to the IDE
-            // automatically. During intake/finalize we emit only the curated message ourselves.
-            this.setDefaultNotifications = streamDefaults
+            this.eventsProducer = reporter.producer
+            // Off in every phase: Koog's default notifications dump raw tool args/results and stream the
+            // model's prose. We render our own concise progress through the EventHandler below instead.
+            this.setDefaultNotifications = false
+        }
+        // One terse line per tool call (writes/edits/lints/shell), plus the turn-completion stop reason
+        // we'd otherwise lose by switching default notifications off. See [ProgressReporter].
+        install(EventHandler) {
+            onToolCallCompleted { reporter.onToolCompleted(it) }
+            onToolCallFailed { reporter.onToolFailed(it) }
+            onAgentCompleted { reporter.onAgentCompleted() }
+            onAgentExecutionFailed { reporter.onAgentFailed(it) }
         }
     }
 
@@ -607,9 +617,5 @@ class KoogAnalystSession(
             val body = runCatching { Path(abs).readText().take(maxChars) }.getOrElse { "(could not read)" }
             "--- $rel ---\n$body"
         }
-    }
-
-    private suspend fun emitMessage(producer: ProducerScope<Event>, message: String) {
-        producer.send(Event.SessionUpdateEvent(SessionUpdate.AgentMessageChunk(ContentBlock.Text(message))))
     }
 }

@@ -9,15 +9,30 @@ package io.thisismo.vego.agent
  * review (HitL Pause 2) and the long-term-memory memo.
  */
 
-/** Whether the user's reply confirms finalization. */
+/** Short exact replies that count as "finalize". */
+private val AFFIRMATIVE_EXACT = setOf("yes", "y", "yeah", "yep", "ok", "okay", "lgtm")
+
+/** Affirmative phrases, matched on whole words so "disapprove" never reads as "approve". */
+private val AFFIRMATIVE_PHRASES = listOf("finalize", "finalise", "looks good", "ship it", "wrap it up", "approve")
+
+/** A leading or embedded negation that flips an otherwise-affirmative reply (e.g. "does not look good"). */
+private val NEGATION = Regex("""\b(no|not|don'?t|doesn'?t|isn'?t|never|hold on|wait)\b""")
+
+/**
+ * Whether the user's reply confirms finalization. Deliberately strict: the HitL Pause 2 prompt tells
+ * the user to reply **finalize** to close or to give feedback to revise, so anything ambiguous or
+ * negated is treated as "revise" — the safe default that never finalizes against the user's intent.
+ */
 internal fun isAffirmative(text: String): Boolean {
     val t = text.lowercase().trim()
-    return "finalize" in t || "finalise" in t || "looks good" in t || "wrap it up" in t ||
-        "approve" in t || "lgtm" in t || "ship it" in t || t == "yes" || t == "y" || t == "ok"
+    if (t.isEmpty()) return false
+    if (t in AFFIRMATIVE_EXACT) return true
+    if (NEGATION.containsMatchIn(t)) return false
+    return AFFIRMATIVE_PHRASES.any { Regex("""\b${Regex.escape(it)}\b""").containsMatchIn(t) }
 }
 
 internal fun renderReview(report: ValidationReport): String = buildString {
-    appendLine(if (report.passed) "## ✅ Specifications ready for review" else "## ⚠️ Specifications drafted (validation found issues)")
+    appendLine(if (report.passed) "## ${Ui.APPROVE} Specifications ready for review" else "## ${Ui.WARN} Specifications drafted (validation found issues)")
     appendLine()
     appendLine("The following documents were written **directly into your working directory** — open them in the IDE Git tool window to diff them:")
     appendLine()
