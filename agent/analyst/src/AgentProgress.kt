@@ -83,9 +83,16 @@ internal class ProgressReporter(
     private val workspaceRoot: String,
     private val verbosity: Verbosity = Verbosity.fromEnvironment(),
 ) {
-    /** Emit one curated Markdown chunk — the dashboards and closing messages. */
+    /**
+     * Emit one curated Markdown chunk — the dashboards, progress lines and closing messages.
+     *
+     * ACP `AgentMessageChunk`s are *streaming* fragments the client concatenates verbatim, so without
+     * an explicit break consecutive emits would run together on one line. We append a blank line so
+     * every chunk reads as its own Markdown paragraph.
+     */
     suspend fun message(markdown: String) {
-        producer.send(Event.SessionUpdateEvent(SessionUpdate.AgentMessageChunk(ContentBlock.Text(markdown))))
+        val text = markdown.trimEnd() + "\n\n"
+        producer.send(Event.SessionUpdateEvent(SessionUpdate.AgentMessageChunk(ContentBlock.Text(text))))
     }
 
     /** A short, italicised "what I'm doing now" line for the gaps between dashboards. */

@@ -18,6 +18,7 @@ import ai.koog.agents.ext.tool.shell.ExecuteShellCommandTool
 import ai.koog.agents.ext.tool.shell.JvmShellCommandExecutor
 import ai.koog.agents.features.acp.AcpAgent
 import ai.koog.agents.features.eventHandler.feature.EventHandler
+import ai.koog.embeddings.base.Embedder
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.rag.base.files.JVMFileSystemProvider
@@ -91,6 +92,8 @@ private const val MAX_DEBATE_ROUNDS = 2
 class KoogAnalystSession(
     override val sessionId: SessionId,
     private val promptExecutor: PromptExecutor,
+    embedder: Embedder,
+    embeddingModelId: String,
     private val protocol: Protocol,
     private val clock: KoogClock,
     private val workspaceRoot: String,
@@ -110,6 +113,9 @@ class KoogAnalystSession(
     private val personaPool = PersonaPool(personaPoolConfig, promptExecutor, models.personaEvaluation)
     private val consensus: ConsensusStrategy = WeightedMatrixConsensus()
 
+    /** Semantic search over the committed-design index, backing `/facts <query>`. */
+    private val semanticIndex = SemanticFactIndex(embedder, workspaceRoot, embeddingModelId)
+
     // ---- State that survives between turns while the session is suspended ----
     private var phase: Phase = Phase.INTAKE
     private var domainModel: DomainModel? = null
@@ -118,6 +124,16 @@ class KoogAnalystSession(
 
     /** How many simulated-debate rounds the pool ran before settling — surfaced on the dashboard. */
     private var debateRounds: Int = 0
+
+    /**
+     * The active long-term-memory context. `null` is the default namespace; a value isolates hydration
+     * and finalize under [memoryDirFor]. Seeded from `ANALYST_MEMORY_NAMESPACE` (switch contexts at
+     * launch) and switchable mid-flight with the `/memory` command.
+     */
+    private var memoryNamespace: String? = System.getenv("ANALYST_MEMORY_NAMESPACE")?.trim()?.takeIf { it.isNotEmpty() }
+
+    /** The workspace-relative memory directory for the active [memoryNamespace]. */
+    private fun memoryDir(): String = memoryDirFor(memoryNamespace)
 
     /**
      * The spec docs already on disk when this session first entered design — the *committed* baseline
@@ -143,6 +159,10 @@ class KoogAnalystSession(
         // The single user-facing emit path for this turn: curated dashboards/headers plus the concise
         // tool-progress lines wired into each agent's EventHandler (see buildAgent).
         val reporter = ProgressReporter(this@channelFlow, workspaceRoot)
+
+        // Control commands (/reset, /memory, /forget, /help) are handled here, ahead of the phase
+        // machine, so they work from any phase without spinning up an agent.
+        if (handleCommand(reporter, text)) return@channelFlow
 
         agentMutex.withLock {
             agentJob = async {
@@ -181,6 +201,125 @@ class KoogAnalystSession(
         Phase.DONE -> "closing the session"
     }
 
+    // =====================================================================================
+    // Control commands — memory & context management (handled before the phase machine)
+    // =====================================================================================
+
+    /** Handle a leading-slash control command. Returns true (and ends the turn) when one was handled. */
+    private suspend fun handleCommand(reporter: ProgressReporter, text: String): Boolean {
+        val trimmed = text.trim()
+        if (!trimmed.startsWith("/")) return false
+
+        val split = trimmed.split(Regex("\\s+"), limit = 2)
+        val cmd = split[0].lowercase()
+        val arg = split.getOrNull(1)?.trim().orEmpty()
+
+        when (cmd) {
+            "/help" -> reporter.message(commandHelp())
+
+            "/reset", "/new" -> {
+                resetSession()
+                reporter.message(
+                    "🔄 **Session reset.** I cleared this conversation's working state — the domain " +
+                        "model, the consensus standing, and any staged drafts — and I'm back at intake. " +
+                        "Long-term memory is untouched. Send a new product idea to begin.",
+                )
+            }
+
+            "/memory" -> when (arg.lowercase()) {
+                "" -> reporter.message(memoryStatus())
+                "list", "entries", "show" ->
+                    reporter.message(renderMemoryEntries(memoryContextLabel(), listLongTermMemory(workspaceRoot, memoryDir())))
+                "facts" -> reporter.message(renderPersistentFacts(listPersistentFacts(workspaceRoot)))
+                "default", "reset" -> {
+                    memoryNamespace = null
+                    reporter.message("🧠 Switched to the **default** memory context (`$MEMORY_DIR_PATH`).")
+                }
+                else -> {
+                    val ns = arg.replace(Regex("[^0-9A-Za-z._-]"), "-")
+                    memoryNamespace = ns
+                    reporter.message(
+                        "🧠 Switched memory context to **$ns** (`${memoryDir()}`). New sessions hydrate " +
+                            "from and finalize into this namespace; switch back with `/memory default`.",
+                    )
+                }
+            }
+
+            "/facts" -> handleFacts(reporter, arg)
+
+            "/forget" -> {
+                val (count, path) = archiveLongTermMemory(workspaceRoot, memoryDir(), clock.now().toString())
+                if (count == 0) {
+                    reporter.message("🗑️ No long-term memory to forget in `${memoryDir()}`.")
+                } else {
+                    reporter.message(
+                        "🗑️ **Forgot $count memo(s)** from `${memoryDir()}`. They were archived " +
+                            "(recoverable) to `$path`, so future sessions start without that history. The " +
+                            "committed-design index is unaffected.",
+                    )
+                }
+            }
+
+            else -> reporter.message("Unknown command `$cmd`.\n\n${commandHelp()}")
+        }
+
+        // No agent runs for a command, so close the ACP turn ourselves.
+        reporter.onAgentCompleted()
+        return true
+    }
+
+    /** Clears the cross-turn working state and returns the session to intake. Memory is preserved. */
+    private fun resetSession() {
+        phase = Phase.INTAKE
+        domainModel = null
+        conflictReport = null
+        validationReport = null
+        committedSpecBaseline = null
+        debateRounds = 0
+    }
+
+    /** Plain label for the active memory context — "default" or the namespace name. */
+    private fun memoryContextLabel(): String = memoryNamespace ?: "default"
+
+    private fun memoryStatus(): String {
+        val ns = memoryNamespace?.let { "**$it**" } ?: "**default**"
+        return "🧠 Active memory context: $ns (`${memoryDir()}`). Use `/memory list` to see stored " +
+            "memos, `/facts` for the committed-design index, `/memory <name>` to switch, `/memory " +
+            "default` to go back, or `/forget` to archive this context's memory."
+    }
+
+    private fun commandHelp(): String = buildString {
+        appendLine("**Commands**")
+        appendLine("- `/reset` (or `/new`) — start a fresh analysis; clears this conversation's state, keeps memory.")
+        appendLine("- `/memory` — show the active long-term-memory context.")
+        appendLine("- `/memory list` — visualize the memos stored in the active context.")
+        appendLine("- `/memory <name>` — switch to a named context; `/memory default` to switch back.")
+        appendLine("- `/facts` — list the persistent committed-design index (RAG facts).")
+        appendLine("- `/facts <query>` — semantic search of that index, ranked by relevance.")
+        appendLine("- `/forget` — archive (recoverably) the current context's long-term memory.")
+        append("- `/help` — show this list.")
+    }
+
+    /** `/facts` with no argument lists the index; with a query it runs semantic search over it. */
+    private suspend fun handleFacts(reporter: ProgressReporter, query: String) {
+        val facts = listPersistentFacts(workspaceRoot)
+        if (query.isBlank() || facts.isEmpty()) {
+            val coverage = if (facts.isEmpty()) null else semanticIndex.coverage(facts)
+            reporter.message(renderPersistentFacts(facts, coverage))
+            return
+        }
+        reporter.step("🔎 Searching the committed-design index for “$query”…")
+        val results = runCatching { semanticIndex.search(query, facts) }.getOrElse { e ->
+            logger.error(e) { "Semantic /facts search failed" }
+            reporter.message(
+                "${Ui.WARN} Semantic search failed (${e.message ?: e::class.simpleName}); showing the " +
+                    "full index instead.\n\n" + renderPersistentFacts(facts, null),
+            )
+            return
+        }
+        reporter.message(renderFactSearch(query, results))
+    }
+
     override suspend fun cancel() {
         logger.info { "Cancelling analyst session $sessionId" }
         agentJob?.cancelAndJoin()
@@ -210,8 +349,21 @@ class KoogAnalystSession(
         val strategy = strategy<String, Unit>("ddd-modeling") {
             // Node 1 — Context Hydration: ground the model in retrieved domain context (memory + index + docs).
             val hydrate by node<String, String>("hydration") { rawIdea ->
-                reporter.step("${Ui.HYDRATE} Hydrating domain context from memory, the design index, and the workspace…")
-                val context = hydrateDomainContext(workspaceRoot)
+                reporter.step("${Ui.HYDRATE} Hydrating domain context — matching the most relevant prior designs…")
+                // Semantic retrieval: pull only the committed designs closest to this idea into the
+                // (expensive) domain-modeling prompt, rather than dumping the whole catalogue. Failures
+                // degrade to the full-catalogue listing inside hydrateDomainContext, so intake never breaks.
+                val relevant = runCatching {
+                    semanticIndex.search(rawIdea, listPersistentFacts(workspaceRoot), topK = 6)
+                }.getOrElse { e ->
+                    logger.warn(e) { "Semantic hydration retrieval failed; falling back to the full catalogue." }
+                    emptyList()
+                }
+                val context = hydrateDomainContext(
+                    workspaceRoot,
+                    memorySubPath = memoryDir(),
+                    committedDesignSection = renderRelevantCommittedDesigns(relevant),
+                )
                 """
                 DOMAIN CONTEXT (retrieved from long-term memory, the committed-design index, and the workspace):
                 $context
@@ -480,6 +632,7 @@ class KoogAnalystSession(
                     sessionId = sessionId.value,
                     isoTimestamp = clock.now().toString(),
                     markdown = renderMemo(memo),
+                    memorySubPath = memoryDir(),
                 )
                 logger.info { "Persisted architecture memory to $path" }
                 // Flush active context caches — drop the large per-turn artifacts now they are durable.
@@ -494,7 +647,8 @@ class KoogAnalystSession(
                 reporter.message(
                     "${Ui.DONE} Specification finalized. Session closed. The documents are in your " +
                         "working directory under `docs/adr`, `docs/c4`, and `docs/ux-specs` — review " +
-                        "them in your IDE and run `git commit` whenever you're ready."
+                        "them in your IDE and run `git commit` whenever you're ready.\n\n" +
+                        "Type `/reset` to start a new analysis, or `/help` for memory and context commands."
                 )
             }
 

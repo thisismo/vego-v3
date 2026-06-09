@@ -3,6 +3,7 @@ package io.thisismo.vego.agent
 import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.ToolSet
+import io.thisismo.vego.agent.indexing.IndexedDoc
 import io.thisismo.vego.agent.indexing.RagIndexReader
 import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
@@ -11,6 +12,7 @@ import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.moveTo
 import kotlin.io.path.pathString
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
@@ -43,6 +45,16 @@ import kotlin.io.path.writeText
 const val MEMORY_DIR_PATH: String = ".vego/memory"
 
 /**
+ * The workspace-relative memory directory for a given context [namespace]. The default (blank/null)
+ * namespace is [MEMORY_DIR_PATH]; a named one isolates its memos under a sibling sub-directory, so the
+ * agent can be pointed at a separate "context" (a different product line, an experiment) without its
+ * memories bleeding across. Non-recursive reads keep the namespaces — and the `.archive` folder
+ * `/forget` writes to — from leaking into each other.
+ */
+fun memoryDirFor(namespace: String?): String =
+    if (namespace.isNullOrBlank()) MEMORY_DIR_PATH else "$MEMORY_DIR_PATH/$namespace"
+
+/**
  * Workflow 1, Hydration node — retrieval that grounds the business analysis in what the project has
  * already established. It layers three sources, cheapest-first:
  *
@@ -55,14 +67,21 @@ const val MEMORY_DIR_PATH: String = ".vego/memory"
  * file-based stand-in for a vector store. Swapping (3) for a true embeddings retriever — or pointing
  * (2) at a vector backend — is a drop-in change behind this single function.
  */
-fun hydrateDomainContext(workspaceRoot: String, maxFiles: Int = 12, maxCharsPerFile: Int = 2_000): String {
+fun hydrateDomainContext(
+    workspaceRoot: String,
+    memorySubPath: String = MEMORY_DIR_PATH,
+    committedDesignSection: String? = null,
+    maxFiles: Int = 12,
+    maxCharsPerFile: Int = 2_000,
+): String {
     val root = Path(workspaceRoot)
     if (!root.exists() || !root.isDirectory()) return "No workspace context available."
 
     val sections = mutableListOf<String>()
 
-    readLongTermMemory(root)?.let { sections += it }
-    readCommittedDesignIndex(root)?.let { sections += it }
+    readLongTermMemory(root, memorySubPath)?.let { sections += it }
+    // Prefer the caller's semantically-retrieved committed designs; fall back to the full catalogue.
+    (committedDesignSection ?: readCommittedDesignIndex(root))?.let { sections += it }
 
     // Working-directory markdown, excluding the agent's own memory/index bookkeeping.
     val markdown = root.toFile()
@@ -90,8 +109,8 @@ fun hydrateDomainContext(workspaceRoot: String, maxFiles: Int = 12, maxCharsPerF
 }
 
 /** Reads the agent's long-term-memory memos (Workflow 3 output), most-recent first. */
-private fun readLongTermMemory(root: java.nio.file.Path, maxMemos: Int = 5): String? {
-    val dir = root.resolve(MEMORY_DIR_PATH)
+private fun readLongTermMemory(root: java.nio.file.Path, memorySubPath: String = MEMORY_DIR_PATH, maxMemos: Int = 5): String? {
+    val dir = root.resolve(memorySubPath)
     if (!dir.exists() || !dir.isDirectory()) return null
     val memos = dir.listDirectoryEntries("*.md")
         .filter { it.isRegularFile() }
@@ -105,9 +124,28 @@ private fun readLongTermMemory(root: java.nio.file.Path, maxMemos: Int = 5): Str
 }
 
 /**
+ * Renders the semantically-retrieved committed designs as a hydration section — the specifications
+ * most relevant to the current idea (via [SemanticFactIndex]), leanest-relevant rather than the whole
+ * catalogue, so the expensive domain-modeling prompt carries fewer, better-targeted tokens. Returns
+ * null when there are no matches, so the caller falls back to the full-catalogue listing.
+ */
+fun renderRelevantCommittedDesigns(scored: List<ScoredFact>): String? {
+    if (scored.isEmpty()) return null
+    return buildString {
+        appendLine("COMMITTED DESIGN INDEX (the specifications most relevant to this idea):")
+        scored.forEach { (doc, _) ->
+            append("- ${doc.path} — ${doc.title}")
+            if (doc.summary.isNotBlank()) append(": ${doc.summary}")
+            appendLine()
+        }
+    }
+}
+
+/**
  * Reads the committed-design RAG index that the post-commit hook (Workflow 4) maintains, via the
  * shared [RagIndexReader], and renders it as a compact catalogue of established specifications. The
- * reader degrades to `null` for a missing or unreadable index, so hydration never fails on it.
+ * reader degrades to `null` for a missing or unreadable index, so hydration never fails on it. Used
+ * as the fallback when semantic retrieval yields nothing (no embedder match, or an embedding failure).
  */
 private fun readCommittedDesignIndex(root: java.nio.file.Path): String? {
     val documents = RagIndexReader.read(root)?.documents?.takeIf { it.isNotEmpty() } ?: return null
@@ -304,12 +342,84 @@ class SpecDocTools(allowedDirectories: List<String>) : ToolSet {
  * ([MEMORY_DIR_PATH]). The filename is timestamp-prefixed so [readLongTermMemory] can return the
  * most recent memos first. Returns the absolute path written.
  */
-fun persistArchitectureMemory(workspaceRoot: String, sessionId: String, isoTimestamp: String, markdown: String): String {
+fun persistArchitectureMemory(
+    workspaceRoot: String,
+    sessionId: String,
+    isoTimestamp: String,
+    markdown: String,
+    memorySubPath: String = MEMORY_DIR_PATH,
+): String {
     val safeStamp = isoTimestamp.replace(Regex("[^0-9A-Za-z]"), "-")
     val safeSession = sessionId.take(8)
-    val dir = Path(workspaceRoot).resolve(MEMORY_DIR_PATH)
+    val dir = Path(workspaceRoot).resolve(memorySubPath)
     dir.createDirectories()
     val file = dir.resolve("$safeStamp-$safeSession.md")
     file.writeText(markdown)
     return file.pathString
 }
+
+/**
+ * Reset for the agent's long-term memory: instead of deleting the memos, it *moves* them into a
+ * timestamped `.archive/<stamp>/` sub-folder of the same memory directory, so a `/forget` is always
+ * recoverable. Non-recursive reads ([readLongTermMemory]) never see the archive, so future sessions
+ * start clean. Returns the number of memos archived and the archive path (or 0/null when there were
+ * none). The committed-design RAG index is intentionally left untouched — it tracks Git, not sessions.
+ */
+fun archiveLongTermMemory(workspaceRoot: String, memorySubPath: String, isoTimestamp: String): Pair<Int, String?> {
+    val dir = Path(workspaceRoot).resolve(memorySubPath)
+    if (!dir.exists() || !dir.isDirectory()) return 0 to null
+    val memos = dir.listDirectoryEntries("*.md").filter { it.isRegularFile() }
+    if (memos.isEmpty()) return 0 to null
+
+    val safeStamp = isoTimestamp.replace(Regex("[^0-9A-Za-z]"), "-")
+    val archive = dir.resolve(".archive").resolve(safeStamp)
+    archive.createDirectories()
+    memos.forEach { it.moveTo(archive.resolve(it.fileName.toString()), overwrite = true) }
+    return memos.size to archive.pathString
+}
+
+// =====================================================================================
+// Memory & persistent-facts inspection (the /memory list and /facts views)
+// =====================================================================================
+
+/**
+ * One stored long-term memo, parsed back from its rendered Markdown for the `/memory list` view:
+ * the title, the file it lives in, and the bullet count per `##` section (Decisions, Constraints, …).
+ */
+data class MemoEntry(val fileName: String, val title: String, val sectionCounts: Map<String, Int>)
+
+/** Lists the memos in [memorySubPath], most-recent first, parsed into [MemoEntry] summaries. */
+fun listLongTermMemory(workspaceRoot: String, memorySubPath: String, maxMemos: Int = 20): List<MemoEntry> {
+    val dir = Path(workspaceRoot).resolve(memorySubPath)
+    if (!dir.exists() || !dir.isDirectory()) return emptyList()
+    return dir.listDirectoryEntries("*.md")
+        .filter { it.isRegularFile() }
+        .sortedByDescending { it.fileName.toString() }
+        .take(maxMemos)
+        .map { file ->
+            val lines = runCatching { file.readText().lines() }.getOrDefault(emptyList())
+            val title = lines.firstOrNull { it.startsWith("# ") }?.removePrefix("# ")?.trim()
+                ?: file.fileName.toString()
+            val counts = linkedMapOf<String, Int>()
+            var section: String? = null
+            for (line in lines) {
+                when {
+                    line.startsWith("## ") -> section = line.removePrefix("## ").trim().also { counts[it] = 0 }
+                    section != null && line.trimStart().startsWith("- ") -> counts[section] = counts.getValue(section) + 1
+                }
+            }
+            MemoEntry(file.fileName.toString(), title, counts)
+        }
+}
+
+/**
+ * The committed-design index entries — the agent's *persistent facts* — most-recently-indexed first,
+ * or empty when the index is absent. This is the durable RAG catalogue the post-commit hook maintains
+ * ([RagIndexReader]); it is the only persisted fact store besides the long-term memos. The dense
+ * "facts" extracted by history compression during a turn are conversation-scoped and never written to
+ * disk, so they are intentionally not listed here.
+ */
+fun listPersistentFacts(workspaceRoot: String): List<IndexedDoc> =
+    RagIndexReader.read(Path(workspaceRoot))?.documents?.values
+        ?.sortedByDescending { it.indexedAt }
+        ?: emptyList()

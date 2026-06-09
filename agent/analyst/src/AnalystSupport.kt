@@ -1,5 +1,6 @@
 package io.thisismo.vego.agent
 
+import ai.koog.embeddings.base.Embedder
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.utils.time.KoogClock
 import com.agentclientprotocol.agent.AgentInfo
@@ -18,6 +19,8 @@ import kotlin.uuid.Uuid
  */
 class KoogAnalystSupport(
     private val promptExecutor: PromptExecutor,
+    private val embedder: Embedder,
+    private val embeddingModelId: String,
     private val protocol: Protocol,
     private val clock: KoogClock,
     private val models: AnalystModelConfig,
@@ -49,6 +52,8 @@ class KoogAnalystSupport(
         return KoogAnalystSession(
             sessionId = sessionId,
             promptExecutor = promptExecutor,
+            embedder = embedder,
+            embeddingModelId = embeddingModelId,
             protocol = protocol,
             clock = clock,
             workspaceRoot = sessionParameters.cwd,

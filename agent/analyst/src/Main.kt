@@ -1,5 +1,8 @@
 package io.thisismo.vego.agent
 
+import ai.koog.embeddings.local.LLMEmbedder
+import ai.koog.prompt.executor.clients.openai.OpenAILLMClient
+import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.utils.time.KoogClock
 import com.agentclientprotocol.agent.Agent
 import com.agentclientprotocol.protocol.Protocol
@@ -42,6 +45,10 @@ suspend fun main() = coroutineScope {
     // (structured requests, streaming design/validation, persona-pool evaluations) retries transient
     // failures with exponential backoff + jitter. Tunable via ANALYST_RETRY_* — see AnalystExecutor.kt.
     val promptExecutor = resilientOpenAIExecutor(apiKey)
+    // Embedder for semantic `/facts` search over the committed-design index. Computed agent-side (where
+    // the key lives) and cached, so the post-commit indexer can stay embedding-free. See SemanticFactIndex.
+    val embeddingModel = OpenAIModels.Embeddings.TextEmbedding3Small
+    val embedder = LLMEmbedder(OpenAILLMClient(apiKey), embeddingModel)
     // Per-stage models: defaults live in AnalystModelConfig, overridable via ANALYST_MODEL_<STAGE> env vars.
     val models = AnalystModelConfig.fromEnvironment()
     // Data-driven decision pool: personas are declared in resources/personas.conf (HOCON).
@@ -56,6 +63,8 @@ suspend fun main() = coroutineScope {
                 KoogAnalystSupport(
                     protocol = agentProtocol,
                     promptExecutor = promptExecutor,
+                    embedder = embedder,
+                    embeddingModelId = embeddingModel.id,
                     clock = KoogClock.System,
                     models = models,
                     personaPool = personaPool,
