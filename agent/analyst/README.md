@@ -59,6 +59,16 @@ export ANALYST_MODEL_VALIDATION=gpt-4o          # self-healing validation loop
 export ANALYST_MODEL_FINALIZE=gpt-4o            # long-term-memory distillation
 ```
 
+The consensus engine's synthesis strategy is pluggable the same way (`ConsensusStrategy.fromEnvironment`):
+
+```sh
+export ANALYST_CONSENSUS_STRATEGY=unanimous-gate  # weighted-matrix (default) | unanimous-gate
+```
+
+`weighted-matrix` averages per-context confidence weighted by persona weight and blocks below a
+threshold; `unanimous-gate` deadlocks on anything short of an outright `APPROVE` from every persona,
+so every disagreement falls through to the debate loop and then to human moderation.
+
 Build the indexer once (the post-commit hook launches its executable jar), then install the hook
 (it lives outside version control under `.git/`):
 

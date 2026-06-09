@@ -29,7 +29,8 @@ import kotlin.io.path.writeText
  * documents straight into the working directory (Workflow 1), then self-heals them against a
  * deterministic linter (Workflow 2) before handing off to the user. So this file backs:
  *  - Hydration — [hydrateDomainContext] retrieves prior context (memory + index + workspace docs);
- *  - Self-healing validation — [lintMarkdownDocs] reports broken links the agent then repairs;
+ *  - Self-healing validation — [LintTools] reports broken links, malformed Mermaid, and diagrams
+ *    out of sync with the agreed domain model, which the agent then repairs;
  *  - Reconciliation — [specDocPaths]/[renderSpecDocInventory] tell the design/revise loop what is
  *    already staged, and [SpecDocTools] lets it *delete* a draft a rejected round left behind (Koog's
  *    built-ins cover read/write/edit but not deletion);
@@ -176,12 +177,41 @@ private val mermaidDiagramKeywords = setOf(
     "requirementDiagram", "C4Context", "C4Container", "C4Component", "C4Dynamic", "C4Deployment",
 )
 
+/** C4 element/relationship macros — a C4 diagram that calls none of these renders an empty frame. */
+private val c4ElementRegex = Regex(
+    """\b(?:Person|Person_Ext|System|System_Ext|SystemDb|SystemQueue|Container|ContainerDb|ContainerQueue|""" +
+        """Component|ComponentDb|ComponentQueue|Node|Deployment_Node|Boundary|Enterprise_Boundary|""" +
+        """System_Boundary|Container_Boundary|Rel|BiRel|Rel_U|Rel_D|Rel_L|Rel_R|Rel_Up|Rel_Down|Rel_Left|Rel_Right)\s*\(""",
+)
+
+/**
+ * The structural text of a Mermaid fence body: `%%` comment lines dropped and double-quoted label
+ * strings blanked, so delimiter balancing never trips over punctuation inside human-facing labels.
+ */
+private fun mermaidStructuralText(body: String): String =
+    body.lineSequence()
+        .filterNot { it.trimStart().startsWith("%%") }
+        .joinToString("\n")
+        .replace(Regex("\"[^\"\n]*\""), "\"\"")
+
+/** The first unbalanced bracket/paren/brace in [text], or null when all delimiters pair up. */
+private fun firstUnbalancedDelimiter(text: String): Char? {
+    val closerToOpener = mapOf(')' to '(', ']' to '[', '}' to '{')
+    val stack = ArrayDeque<Char>()
+    for (ch in text) when (ch) {
+        '(', '[', '{' -> stack.addLast(ch)
+        ')', ']', '}' -> if (stack.lastOrNull() == closerToOpener[ch]) stack.removeLast() else return ch
+    }
+    return stack.lastOrNull()
+}
+
 /**
  * Validates every Markdown file under the given directories: flags empty files, broken relative
- * links (links whose target file does not exist on disk), and malformed Mermaid diagrams (empty
- * fences or an unrecognized diagram type — the C4 Context/Container diagrams are written as Mermaid).
+ * links (links whose target file does not exist on disk), and malformed Mermaid diagrams — empty
+ * fences, an unrecognized diagram type, a C4 diagram with no C4 elements, or unbalanced
+ * brackets/parens/braces outside quoted labels (the C4 diagrams are written as Mermaid).
  * External links, mail links and pure anchors are ignored. This is the deterministic checker that
- * backs both the agent-facing [lintMarkdownDocs] tool and the authoritative [ValidationReport] — the
+ * backs both the agent-facing [LintTools] tool and the authoritative [ValidationReport] — the
  * "test" half of the self-healing loop, so the report the user eventually sees cannot be hallucinated.
  */
 fun validateMarkdownDocs(directories: List<String>): Pair<List<String>, List<DocFinding>> {
@@ -228,6 +258,21 @@ fun validateMarkdownDocs(directories: List<String>): Pair<List<String>, List<Doc
                             "Mermaid diagram has unrecognized type '$firstToken' (expected one of: " +
                                 "${mermaidDiagramKeywords.joinToString(", ")}).",
                         )
+                        return@forEach
+                    }
+                    val structural = mermaidStructuralText(body)
+                    if (firstToken.startsWith("C4", ignoreCase = true) && !c4ElementRegex.containsMatchIn(structural)) {
+                        findings += DocFinding(
+                            file.absolutePath,
+                            "C4 diagram '$firstToken' declares no C4 elements (Person/System/Container/" +
+                                "Component/Boundary/Rel…) — it would render as an empty frame.",
+                        )
+                    }
+                    firstUnbalancedDelimiter(structural)?.let { ch ->
+                        findings += DocFinding(
+                            file.absolutePath,
+                            "Mermaid diagram '$firstToken' has an unbalanced '$ch' outside quoted labels.",
+                        )
                     }
                 }
             }
@@ -235,21 +280,76 @@ fun validateMarkdownDocs(directories: List<String>): Pair<List<String>, List<Doc
     return files to findings
 }
 
-@Tool(customName = "lint_markdown_docs")
-@LLMDescription(
-    "Validates every Markdown file under the given absolute directory for empty files, broken " +
-        "relative links, and malformed Mermaid diagrams (empty or unrecognized C4/diagram type). " +
-        "Returns 'OK — no issues found.' when clean, otherwise a numbered list of issues to fix. " +
-        "Call this after writing docs and re-call it after each fix until it returns OK."
-)
-fun lintMarkdownDocs(
-    @LLMDescription("Absolute path of the directory whose Markdown files should be validated") absoluteDirectory: String,
-): String {
-    val (_, findings) = validateMarkdownDocs(listOf(absoluteDirectory))
-    if (findings.isEmpty()) return "OK — no issues found."
-    return buildString {
-        appendLine("${findings.size} issue(s) found:")
-        findings.forEachIndexed { i, f -> appendLine("${i + 1}. ${f.file}: ${f.message}") }
+/**
+ * Cross-checks the drafted architecture diagrams against the agreed [DomainModel]: every bounded
+ * context the pool signed off on is expected to appear, by name, in at least one Mermaid diagram
+ * under [c4Directory] — a diagram set that silently drops a context is out of sync with the model
+ * the consensus was about. Matching is lenient (case- and punctuation-insensitive) because C4
+ * aliases conventionally strip spaces (`OrderManagement` for "Order Management"). Returns one
+ * finding per missing context, or nothing when the directory has no Mermaid diagrams yet (the
+ * missing-diagram case is the design prompt's responsibility, not the cross-check's).
+ */
+fun crossCheckC4AgainstDomainModel(c4Directory: String, domainModel: DomainModel): List<DocFinding> {
+    val dir = Path(c4Directory)
+    if (!dir.exists() || !dir.isDirectory()) return emptyList()
+    val diagramBodies = dir.toFile().walkTopDown()
+        .filter { it.isFile && it.extension.lowercase() in setOf("md", "markdown") }
+        .flatMap { file -> mermaidFenceRegex.findAll(file.readText()).map { it.groupValues[1] } }
+        .toList()
+    if (diagramBodies.isEmpty()) return emptyList()
+
+    fun normalize(s: String) = s.lowercase().replace(Regex("[^a-z0-9]"), "")
+    val haystack = normalize(diagramBodies.joinToString("\n"))
+    return domainModel.boundedContexts
+        .filter { ctx -> normalize(ctx.name).let { it.isNotEmpty() && it !in haystack } }
+        .map { ctx ->
+            DocFinding(
+                c4Directory,
+                "Bounded context '${ctx.name}' from the agreed domain model does not appear in any " +
+                    "Mermaid diagram under this directory.",
+            )
+        }
+}
+
+/**
+ * The agent-facing wrapper around [validateMarkdownDocs] for the self-healing loop. It is a [ToolSet]
+ * (not a free function) so it can carry the session's agreed [domainModel]: when the linted directory
+ * is the C4 directory it additionally runs [crossCheckC4AgainstDomainModel], so a diagram set that
+ * drops a bounded context surfaces as a lint finding the agent can repair — not just as a failure in
+ * the authoritative post-hoc report.
+ */
+class LintTools(
+    private val c4Directory: String,
+    private val domainModel: DomainModel?,
+) : ToolSet {
+    @Tool(customName = "lint_markdown_docs")
+    @LLMDescription(
+        "Validates every Markdown file under the given absolute directory for empty files, broken " +
+            "relative links, and malformed Mermaid diagrams (empty fence, unrecognized C4/diagram " +
+            "type, a C4 diagram with no C4 elements, or unbalanced brackets). For the C4 directory " +
+            "it also cross-checks the diagrams against the agreed domain model: every bounded " +
+            "context must appear in at least one diagram. Returns 'OK — no issues found.' when " +
+            "clean, otherwise a numbered list of issues to fix. Call this after writing docs and " +
+            "re-call it after each fix until it returns OK."
+    )
+    fun lintMarkdownDocs(
+        @LLMDescription("Absolute path of the directory whose Markdown files should be validated") absoluteDirectory: String,
+    ): String {
+        val (_, lintFindings) = validateMarkdownDocs(listOf(absoluteDirectory))
+        val findings = lintFindings + crossCheckFindings(absoluteDirectory)
+        if (findings.isEmpty()) return "OK — no issues found."
+        return buildString {
+            appendLine("${findings.size} issue(s) found:")
+            findings.forEachIndexed { i, f -> appendLine("${i + 1}. ${f.file}: ${f.message}") }
+        }
+    }
+
+    private fun crossCheckFindings(absoluteDirectory: String): List<DocFinding> {
+        val model = domainModel ?: return emptyList()
+        val isC4Dir = runCatching {
+            Path(absoluteDirectory).toAbsolutePath().normalize() == Path(c4Directory).toAbsolutePath().normalize()
+        }.getOrDefault(false)
+        return if (isC4Dir) crossCheckC4AgainstDomainModel(c4Directory, model) else emptyList()
     }
 }
 

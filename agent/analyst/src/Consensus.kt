@@ -1,5 +1,6 @@
 package io.thisismo.vego.agent
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.Serializable
 
 /**
@@ -8,8 +9,9 @@ import kotlinx.serialization.Serializable
  * verdicts — no extra LLM call — so what the user moderates in HitL Pause 1 is a faithful aggregation
  * of the personas' confidence, not a re-hallucinated summary.
  *
- * v1 ships one strategy ([WeightedMatrixConsensus]); the interface exists so Round-Robin Iteration and
- * the Unanimous Gate from the design slot in without touching the graph.
+ * Two strategies ship today — [WeightedMatrixConsensus] (the default) and [UnanimousGateConsensus] —
+ * selected at launch via [ConsensusStrategy.fromEnvironment]; Round-Robin Iteration from the design
+ * still slots in without touching the graph.
  */
 interface ConsensusStrategy {
     /** Stable name shown in the conflict report (e.g. "weighted-matrix"). */
@@ -17,6 +19,31 @@ interface ConsensusStrategy {
 
     /** Synthesize the pool's verdicts about [domainModel] into a conflict report. */
     fun synthesize(verdicts: List<PersonaVerdict>, domainModel: DomainModel): ConflictReport
+
+    companion object {
+        private val logger = KotlinLogging.logger {}
+
+        /** Environment variable selecting the strategy by name (`weighted-matrix` | `unanimous-gate`). */
+        const val ENV_VAR: String = "ANALYST_CONSENSUS_STRATEGY"
+
+        /**
+         * Resolves the active strategy from the environment, mirroring [AnalystModelConfig.fromEnvironment]:
+         * `ANALYST_CONSENSUS_STRATEGY` set to a strategy name picks it; unset or unknown keeps the
+         * default [WeightedMatrixConsensus] (unknown names are logged). [getenv] is injectable for testing.
+         */
+        fun fromEnvironment(getenv: (String) -> String? = System::getenv): ConsensusStrategy {
+            val id = getenv(ENV_VAR)?.trim()?.lowercase()?.takeIf { it.isNotEmpty() }
+                ?: return WeightedMatrixConsensus()
+            return when (id) {
+                "weighted-matrix" -> WeightedMatrixConsensus()
+                "unanimous-gate" -> UnanimousGateConsensus()
+                else -> {
+                    logger.warn { "Unknown consensus strategy '$id' for $ENV_VAR; keeping default weighted-matrix." }
+                    WeightedMatrixConsensus()
+                }
+            }.also { logger.info { "Consensus strategy: ${it.name}." } }
+        }
+    }
 }
 
 /** One row of the confidence matrix: a single persona's headline stance, for the dashboard. */
@@ -84,8 +111,7 @@ class WeightedMatrixConsensus(
             var weightedScore = 0.0
             val dissent = mutableListOf<String>()
             voters.forEach { v ->
-                val assessment = v.evaluation.assessments
-                    .firstOrNull { it.boundedContext.equals(ctx.name, ignoreCase = true) }
+                val assessment = v.assessmentFor(ctx.name)
                 val confidence = assessment?.confidence ?: v.evaluation.overallConfidence
                 val w = v.persona.weight
                 weightSum += w
@@ -105,40 +131,91 @@ class WeightedMatrixConsensus(
             )
         }
 
-        val totalWeight = verdicts.sumOf { it.persona.weight }
-        val overall = if (totalWeight > 0.0) {
-            verdicts.sumOf { it.persona.weight * it.evaluation.overallConfidence } / totalWeight
-        } else 0.0
+        val deadlocked = verdicts.any { it.evaluation.verdict == Verdict.BLOCK } || contexts.any { it.blocking }
+        return buildReport(name, verdicts, contexts, deadlocked)
+    }
+}
 
-        val blockers = verdicts
+/**
+ * Unanimous-gate consensus: the pool advances only when *every* persona approves outright. Any
+ * [Verdict.BLOCK] or [Verdict.APPROVE_WITH_CONCERNS], or any per-context confidence below
+ * [approveThreshold], deadlocks the pool — so anything short of unanimity falls through to the
+ * bounded debate loop and then to human moderation. The weighted confidences are still computed
+ * and reported (the dashboard matrix is unchanged); only the blocking/deadlock rule is stricter.
+ */
+class UnanimousGateConsensus(
+    private val approveThreshold: Double = 75.0,
+) : ConsensusStrategy {
+    override val name: String = "unanimous-gate"
+
+    override fun synthesize(verdicts: List<PersonaVerdict>, domainModel: DomainModel): ConflictReport {
+        val contexts = domainModel.boundedContexts.map { ctx ->
+            val voters = verdicts.filter { it.persona.coversContext(ctx.name) }
+
+            var weightSum = 0.0
+            var weightedScore = 0.0
+            val dissent = mutableListOf<String>()
+            voters.forEach { v ->
+                val assessment = v.assessmentFor(ctx.name)
+                val confidence = assessment?.confidence ?: v.evaluation.overallConfidence
+                weightSum += v.persona.weight
+                weightedScore += v.persona.weight * confidence
+                if (v.evaluation.verdict != Verdict.APPROVE || confidence < approveThreshold) {
+                    dissent += "${v.persona.role}: ${assessment?.rationale ?: "did not approve outright"}"
+                }
+            }
+
+            ContextConsensus(
+                boundedContext = ctx.name,
+                weightedConfidence = (if (weightSum > 0.0) weightedScore / weightSum else 0.0).round1(),
+                blocking = dissent.isNotEmpty(),
+                dissent = dissent,
+            )
+        }
+
+        val deadlocked = verdicts.any { it.evaluation.verdict != Verdict.APPROVE } || contexts.any { it.blocking }
+        return buildReport(name, verdicts, contexts, deadlocked)
+    }
+}
+
+// ---- Aggregation shared by every strategy: only the blocking/deadlock rule differs between them ----
+
+/** The persona's per-context assessment for [contextName], if it produced one. */
+private fun PersonaVerdict.assessmentFor(contextName: String): ContextAssessment? =
+    evaluation.assessments.firstOrNull { it.boundedContext.equals(contextName, ignoreCase = true) }
+
+/** Assembles the [ConflictReport] from the strategy-specific per-context consensus + deadlock flag. */
+private fun buildReport(
+    strategy: String,
+    verdicts: List<PersonaVerdict>,
+    contexts: List<ContextConsensus>,
+    deadlocked: Boolean,
+): ConflictReport {
+    val totalWeight = verdicts.sumOf { it.persona.weight }
+    val overall = if (totalWeight > 0.0) {
+        verdicts.sumOf { it.persona.weight * it.evaluation.overallConfidence } / totalWeight
+    } else 0.0
+
+    return ConflictReport(
+        strategy = strategy,
+        overallWeightedConfidence = overall.round1(),
+        deadlocked = deadlocked,
+        contexts = contexts,
+        blockers = verdicts
             .filter { it.evaluation.verdict == Verdict.BLOCK }
             .flatMap { v -> v.evaluation.concerns.map { "${v.persona.role}: $it" } }
-            .distinct()
-
-        val openConcerns = verdicts
+            .distinct(),
+        openConcerns = verdicts
             .filter { it.evaluation.verdict != Verdict.BLOCK }
             .flatMap { v -> v.evaluation.concerns.map { "${v.persona.role}: $it" } }
-            .distinct()
-
-        val counterProposals = verdicts
+            .distinct(),
+        counterProposals = verdicts
             .flatMap { v -> v.evaluation.counterProposals.map { "${v.persona.role}: $it" } }
-            .distinct()
-
-        val deadlocked = verdicts.any { it.evaluation.verdict == Verdict.BLOCK } || contexts.any { it.blocking }
-
-        return ConflictReport(
-            strategy = name,
-            overallWeightedConfidence = overall.round1(),
-            deadlocked = deadlocked,
-            contexts = contexts,
-            blockers = blockers,
-            openConcerns = openConcerns,
-            counterProposals = counterProposals,
-            matrix = verdicts.map {
-                PersonaScoreRow(it.persona.id, it.persona.role, it.evaluation.verdict, it.evaluation.overallConfidence)
-            },
-        )
-    }
-
-    private fun Double.round1(): Double = kotlin.math.round(this * 10.0) / 10.0
+            .distinct(),
+        matrix = verdicts.map {
+            PersonaScoreRow(it.persona.id, it.persona.role, it.evaluation.verdict, it.evaluation.overallConfidence)
+        },
+    )
 }
+
+private fun Double.round1(): Double = kotlin.math.round(this * 10.0) / 10.0

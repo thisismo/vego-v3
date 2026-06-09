@@ -7,7 +7,6 @@ import ai.koog.agents.core.dsl.builder.node
 import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.agents.core.dsl.extension.*
 import ai.koog.agents.core.tools.ToolRegistry
-import ai.koog.agents.core.tools.reflect.asTool
 import ai.koog.agents.ext.agent.subgraphWithTask
 import ai.koog.agents.ext.tool.file.EditFileTool
 import ai.koog.agents.ext.tool.file.ListDirectoryTool
@@ -109,9 +108,12 @@ class KoogAnalystSession(
     private val c4Dir: String = "$workspaceRoot/docs/c4"
     private val uxDir: String = "$workspaceRoot/docs/ux-specs"
 
-    /** The decision pool and the consensus strategy that synthesizes its verdicts. */
+    /**
+     * The decision pool and the consensus strategy that synthesizes its verdicts. The strategy is
+     * picked at launch via `ANALYST_CONSENSUS_STRATEGY` (default: weighted-matrix).
+     */
     private val personaPool = PersonaPool(personaPoolConfig, promptExecutor, models.personaEvaluation)
-    private val consensus: ConsensusStrategy = WeightedMatrixConsensus()
+    private val consensus: ConsensusStrategy = ConsensusStrategy.fromEnvironment()
 
     /** Semantic search over the committed-design index, backing `/facts <query>`. */
     private val semanticIndex = SemanticFactIndex(embedder, workspaceRoot, embeddingModelId)
@@ -455,7 +457,8 @@ class KoogAnalystSession(
                     produce specification artifacts as files on disk, written straight into the user's
                     working directory (the user reviews and commits them later — you must NEVER run git):
                       - Architecture Decision Records under $adrDir
-                      - C4 Context and Container diagrams (as Mermaid) under $c4Dir
+                      - C4 diagrams as Mermaid under $c4Dir — Context and Container always, plus the
+                        deeper Component/Dynamic/Deployment views when the architecture warrants them
                       - UI component inventories / UX specifications under $uxDir
                     You write valid Markdown with working relative links and valid Mermaid. You use the
                     provided file, lint and delete tools; you never fabricate file contents. When drafts
@@ -533,6 +536,12 @@ class KoogAnalystSession(
                   2. A C4 Context diagram at $c4Dir/context.md and a C4 Container diagram at
                      $c4Dir/container.md, each as a Mermaid ```mermaid``` block (use C4Context / C4Container,
                      or flowchart if clearer) reflecting the bounded contexts and their integration points.
+                     Every bounded context from the agreed domain model must appear in the diagrams.
+                     When the architecture warrants the extra depth — and only then — add deeper C4 views:
+                     a C4Component diagram at $c4Dir/component.md (the components inside the most complex
+                     container), a C4Dynamic diagram at $c4Dir/dynamic.md (the key cross-context runtime
+                     interaction), and/or a C4Deployment diagram at $c4Dir/deployment.md (the deployment
+                     topology). Skip any deeper view that would merely restate the container diagram.
                   3. A UI component inventory at $uxDir/component-inventory.md listing each UI component
                      implied by the model (name, purpose, key states, the context it serves), plus any
                      per-screen UX specs as $uxDir/<screen>.md.
@@ -546,7 +555,8 @@ class KoogAnalystSession(
                 """
                 Validate the documents you just wrote, BEFORE the user sees them:
                   1. Call lint_markdown_docs on $adrDir, then $c4Dir, then $uxDir.
-                  2. If any reports issues (a broken relative link, or a malformed/empty Mermaid diagram),
+                  2. If any reports issues (a broken relative link, a malformed/empty Mermaid diagram,
+                     or a bounded context from the agreed domain model missing from the C4 diagrams),
                      fix the offending files with the edit-file or write-file tools, then re-call
                      lint_markdown_docs on that directory.
                   3. Repeat until all three directories report "OK — no issues found." (at most
@@ -556,8 +566,11 @@ class KoogAnalystSession(
             }
 
             // Authoritative report — recomputed deterministically in-process so it cannot be hallucinated.
+            // Includes the domain-model cross-check, so a diagram set that dropped a bounded context
+            // is reported even if the self-healing loop gave up on it.
             val buildReport by node<Unit, ValidationReport>("validation-report") {
-                val (files, findings) = validateMarkdownDocs(listOf(adrDir, c4Dir, uxDir))
+                val (files, lintFindings) = validateMarkdownDocs(listOf(adrDir, c4Dir, uxDir))
+                val findings = lintFindings + crossCheckC4AgainstDomainModel(c4Dir, model)
                 ValidationReport(
                     passed = findings.isEmpty(),
                     files = files.sorted(),
@@ -579,7 +592,7 @@ class KoogAnalystSession(
             edge(emitReview forwardTo nodeFinish)
         }
 
-        buildAgent(reporter, config, strategy, executionToolRegistry()).run(directive)
+        buildAgent(reporter, config, strategy, executionToolRegistry(model)).run(directive)
     }
 
     // =====================================================================================
@@ -703,18 +716,19 @@ class KoogAnalystSession(
     /**
      * Tools available during design + self-healing validation — read/write/lint/shell (never git).
      *
-     * File and shell access are Koog's built-in tools; [lintMarkdownDocs] stays a custom tool because
-     * it is the domain-specific deterministic checker that backs the self-healing loop. The shell tool
-     * runs in "brave mode" (no interactive confirmation) — this agent talks ACP/JSON-RPC over stdio,
-     * so a console confirmation prompt is impossible; the prompt forbids git and the user reviews and
-     * commits everything manually.
+     * File and shell access are Koog's built-in tools; [LintTools] stays a custom tool set because it
+     * is the domain-specific deterministic checker that backs the self-healing loop — carrying the
+     * agreed [model] so the C4 diagrams are cross-checked against it. The shell tool runs in "brave
+     * mode" (no interactive confirmation) — this agent talks ACP/JSON-RPC over stdio, so a console
+     * confirmation prompt is impossible; the prompt forbids git and the user reviews and commits
+     * everything manually.
      */
-    private fun executionToolRegistry() = ToolRegistry {
+    private fun executionToolRegistry(model: DomainModel) = ToolRegistry {
         tool(ListDirectoryTool(JVMFileSystemProvider.ReadOnly))
         tool(ReadFileTool(JVMFileSystemProvider.ReadOnly))
         tool(WriteFileTool(JVMFileSystemProvider.ReadWrite))
         tool(EditFileTool(JVMFileSystemProvider.ReadWrite))
-        tool(::lintMarkdownDocs.asTool())
+        tools(LintTools(c4Dir, model).asTools())
         // Deletion is not a Koog built-in; this hard-scopes it to the spec dirs so a rejected round
         // can retire its stale drafts without ever reaching the rest of the workspace.
         tools(SpecDocTools(listOf(adrDir, c4Dir, uxDir)).asTools())
