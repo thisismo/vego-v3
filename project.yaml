@@ -1,14 +1,17 @@
 modules:
   - client/android-app
-  - client/ios-app
   - client/core
+  - client/ios-app
+  - modules/common/client
+  - modules/common/common-core
   - modules/common/server-auth
+  - modules/common/sync-infrastructure
   - modules/identity/identity-common
   - modules/identity/identity-common-client
   - modules/identity/identity-server
-  - server
-  - modules/common/client
   - modules/sqldelight-plugin
+  - server
+  - modules/common/es-core
 
 plugins:
   - ./modules/sqldelight-plugin
