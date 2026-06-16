@@ -4,6 +4,7 @@ import io.thisismo.vego.common.es_core.*
 import io.thisismo.vego.identity.common.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -24,7 +25,7 @@ class TestAdderAggregate(override val initial: Int = 0) : Aggregate<Int,  TestAd
         state: Int,
         command: TestAddCommand
     ): List<TestAddedEvent> {
-        if (state > 100) return emptyList()
+        if(command.value < 0) throw IllegalArgumentException("value must be positive")
 
         return listOf(TestAddedEvent(command.value))
     }
@@ -59,5 +60,12 @@ class AggregateFoldingTest {
     fun `decide is pure and reads nothing it shouldn't`() {
         assertEquals(listOf(TestAddedEvent(5).value),
             adder.decide(state = 42, TestAddCommand(5)).map { it.value })
+    }
+
+    @Test
+    fun `decide throws exception when command is invalid`() {
+        assertFailsWith<IllegalArgumentException> {
+            adder.decide(state = 42, TestAddCommand(-1))
+        }
     }
 }
