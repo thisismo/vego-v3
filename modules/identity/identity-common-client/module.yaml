@@ -7,7 +7,9 @@ apply:
   - ../../build-utils/client-persistence.module-template.yaml
 
 plugins:
-  sqldelight-plugin: enabled
+  sqldelight:
+    enabled: true
+    dialect: sqlite-3-38
 
 dependencies:
   - ../identity-common

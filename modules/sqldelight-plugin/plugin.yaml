@@ -1,8 +1,17 @@
 tasks:
   generate:
-      action: !io.thisismo.vego.runSqlDelight
-        moduleRootDir: ${module.rootDir}
-        outputDirectory: ${taskOutputDir}
+    action: !io.thisismo.sqldelight.generateSqlDelight
+      moduleRootDir: ${module.rootDir}
+      outputDirectory: ${taskOutputDir}
+      moduleName: ${module.name}
+      packageName: ${pluginSettings.packageName}
+      databaseClassName: ${pluginSettings.databaseClassName}
+      dialect: ${pluginSettings.dialect}
+      generateAsync: ${pluginSettings.generateAsync}
+      deriveSchemaFromMigrations: ${pluginSettings.deriveSchemaFromMigrations}
+      verifyMigrations: ${pluginSettings.verifyMigrations}
+      treatNullAsUnknownForEquality: ${pluginSettings.treatNullAsUnknownForEquality}
+      expandSelectStar: ${pluginSettings.expandSelectStar}
 
 generated:
   sources:

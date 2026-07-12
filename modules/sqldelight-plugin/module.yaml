@@ -1,7 +1,32 @@
 product: jvm/amper-plugin
 
+description: Generates type-safe Kotlin database APIs from SQL using the SQLDelight compiler
+
+pluginInfo:
+  id: sqldelight
+  settingsClass: io.thisismo.sqldelight.SqlDelightSettings
+
+# All SQLDelight artifacts must share the same version. Consuming modules should use the same
+# version for their app.cash.sqldelight:runtime and driver dependencies.
 dependencies:
-  - $libs.sqldelight.compiler
-  - $libs.sqlite.dialect
-  - $libs.sqldelight.gradle.plugin
-  - $libs.sqldelight.environment
+  # The SQLDelight compiler plus SqlDelightEnvironment, the headless compilation environment that
+  # the Gradle plugin uses in its workers. There is no Gradle involved here; Gradle types stay
+  # unused on the classpath.
+  - app.cash.sqldelight:gradle-plugin:2.3.2
+  # IntelliJ platform core, required at runtime to parse and analyze .sq/.sqm files.
+  - app.cash.sqldelight:compiler-env:2.3.2
+  # SqlCoreEnvironment, the supertype of SqlDelightEnvironment. Must match the sql-psi version
+  # used by the SQLDelight release above (see the gradle-plugin POM).
+  - app.cash.sql-psi:environment:0.7.3
+  # Bundled dialects, selectable per module via the `dialect` setting.
+  - app.cash.sqldelight:sqlite-3-18-dialect:2.3.2
+  - app.cash.sqldelight:sqlite-3-24-dialect:2.3.2
+  - app.cash.sqldelight:sqlite-3-25-dialect:2.3.2
+  - app.cash.sqldelight:sqlite-3-30-dialect:2.3.2
+  - app.cash.sqldelight:sqlite-3-33-dialect:2.3.2
+  - app.cash.sqldelight:sqlite-3-35-dialect:2.3.2
+  - app.cash.sqldelight:sqlite-3-38-dialect:2.3.2
+  - app.cash.sqldelight:postgresql-dialect:2.3.2
+  - app.cash.sqldelight:hsql-dialect:2.3.2
+  # Note: mysql-dialect is not bundled. It depends on mysql:mysql-connector-java, which only
+  # exists as a relocation POM that the Kotlin Toolchain's resolver cannot follow yet.

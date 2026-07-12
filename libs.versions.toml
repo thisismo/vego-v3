@@ -8,7 +8,6 @@ realm = "2.3.0"
 sqldelight = "2.3.2"
 coroutines = "1.11.0"
 atomicfu = "0.33.0"
-sqldelight-env = "0.7.3"
 
 [libraries]
 # Koin
@@ -47,10 +46,6 @@ logging-logback-classic = { module = "ch.qos.logback:logback-classic", version.r
 sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
 sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
 sqldelight-native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
-sqldelight-compiler = { module = "app.cash.sqldelight:compiler-env", version.ref = "sqldelight" }
-sqlite-dialect = { module = "app.cash.sqldelight:sqlite-3-38-dialect", version.ref = "sqldelight" }
-sqldelight-gradle-plugin = { module = "app.cash.sqldelight:gradle-plugin", version.ref = "sqldelight" }
-sqldelight-environment = { module = "app.cash.sql-psi:environment", version.ref = "sqldelight-env" }
 
 # KotlinX
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines"}
