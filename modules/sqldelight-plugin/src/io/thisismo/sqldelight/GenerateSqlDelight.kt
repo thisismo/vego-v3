@@ -23,10 +23,12 @@ import java.nio.file.Path
  *
  * The source roots (`src`, `src@android`, ...) are discovered from [moduleRootDir] rather than
  * taken from the built-in `${module.kotlinJavaSources}` reference, because the latter is JVM-only
- * and this plugin also targets Kotlin Multiplatform modules. The source roots themselves act as
- * SQLDelight source folders, so the package of a `.sq` file is derived from its directory path:
- * `src/sqldelight/User.sq` produces `sqldelight.UserQueries`. SQLDelight requires every `.sq` file
- * to live in a package directory; they cannot sit directly in a source root.
+ * and this plugin also targets Kotlin Multiplatform modules. [additionalSourceDirectories] are
+ * compiled in as well, which allows a module to include SQL sources that live in another module.
+ * Every source folder participates the same way: the package of a `.sq` file is derived from its
+ * directory path below the folder, so `src/sqldelight/User.sq` produces `sqldelight.UserQueries`.
+ * SQLDelight requires every `.sq` file to live in a package directory; they cannot sit directly
+ * in a source folder.
  *
  * The output directory is fully replaced on each run so that files generated for deleted or
  * renamed `.sq` files do not linger.
@@ -34,6 +36,7 @@ import java.nio.file.Path
 @TaskAction
 fun generateSqlDelight(
     @Input moduleRootDir: Path,
+    @Input additionalSourceDirectories: List<Path> = emptyList(),
     @Output outputDirectory: Path,
     moduleName: String,
     packageName: String = "sqldelight",
@@ -60,7 +63,7 @@ fun generateSqlDelight(
     }
 
     val moduleRoot = moduleRootDir.toFile()
-    val sourceFolders = sqlDelightSourceFolders(moduleRoot)
+    val sourceFolders = sqlDelightSourceFolders(moduleRoot, additionalSourceDirectories)
 
     // Replace the previous output wholesale: the compiler only ever adds files, so leftovers from
     // deleted or renamed .sq files would otherwise stay on the compile classpath.
@@ -68,10 +71,11 @@ fun generateSqlDelight(
     outputDir.deleteRecursively()
     outputDir.mkdirs()
 
+    // Stdout on purpose: the toolchain logs stderr at error level, and this is not an error.
     if (sourceFolders.none { it.folder.containsSqlDelightSources() }) {
-        System.err.println(
-            "SQLDelight is enabled for module '$moduleName' but no .sq or .sqm files were found " +
-                "under its source directories. Skipping code generation.",
+        println(
+            "Warning: SQLDelight is enabled for module '$moduleName' but no .sq or .sqm files were " +
+                "found under its source directories. Skipping code generation.",
         )
         return
     }
@@ -114,15 +118,34 @@ fun generateSqlDelight(
 }
 
 /**
- * The module's source roots, i.e. the `src` directory and its platform-qualified variants
- * (`src@android`, ...), used directly as SQLDelight source folders.
+ * The module's source roots — the `src` directory and its platform-qualified variants
+ * (`src@android`, ...) — plus the configured additional directories, used directly as SQLDelight
+ * source folders. Exact duplicates are dropped; a folder nested inside another is rejected,
+ * because SQLDelight would process the files below it twice.
  */
-private fun sqlDelightSourceFolders(moduleRoot: File): Set<SqlDelightSourceFolder> =
-    (moduleRoot.listFiles().orEmpty())
+private fun sqlDelightSourceFolders(moduleRoot: File, additional: List<Path>): Set<SqlDelightSourceFolder> {
+    val sourceRoots = moduleRoot.listFiles().orEmpty()
         .filter { it.isDirectory && (it.name == "src" || it.name.startsWith("src@")) }
         .sortedBy { it.name }
-        .map { SourceFolder(it) }
-        .toSet()
+    val additionalDirs = additional.map { moduleRoot.toPath().resolve(it).toFile() }
+    additionalDirs.forEach {
+        require(it.isDirectory) {
+            "additionalSourceDirectories entry '$it' does not exist or is not a directory."
+        }
+    }
+
+    val folders = (sourceRoots + additionalDirs).map { it.canonicalFile }.distinct()
+    folders.forEach { folder ->
+        folders.forEach { other ->
+            require(folder == other || !folder.startsWith(other)) {
+                "Source directory '$folder' is nested inside '$other'; their files would be compiled twice. " +
+                    "Remove the nested entry from additionalSourceDirectories."
+            }
+        }
+    }
+
+    return folders.map(::SourceFolder).toSet()
+}
 
 private fun File.containsSqlDelightSources(): Boolean =
     walkTopDown().any { it.isFile && (it.extension == "sq" || it.extension == "sqm") }

@@ -124,6 +124,7 @@ plugins:
 | `verifyMigrations`              | `false`      | Type-check `.sqm` files during code generation and fail the build on errors.                                                              |
 | `treatNullAsUnknownForEquality` | `false`      | Keep SQL semantics for `= NULL` instead of rewriting it to `IS NULL`.                                                                     |
 | `expandSelectStar`              | `true`       | Expand `SELECT *` into explicit column lists at compile time.                                                                             |
+| `additionalSourceDirectories`   | `[]`         | Extra directories to compile SQL from, resolved against the module root. See [Sharing SQL between modules](#sharing-sql-between-modules). |
 
 ### Dialects
 
@@ -144,6 +145,35 @@ a relocation POM that the Kotlin Toolchain's dependency resolver cannot follow y
 `verifyMigrations` to have them type-checked at build time, or `deriveSchemaFromMigrations` to
 treat them as the source of truth for the schema.
 
+### Sharing SQL between modules
+
+A module can compile `.sq`/`.sqm` files that live in another module by listing extra source
+directories. Relative paths are resolved against the module root:
+
+```yaml
+plugins:
+  sqldelight:
+    enabled: true
+    additionalSourceDirectories: [ ../common/sqldelight ]
+```
+
+With `../common/sqldelight/shared/User.sq`, this generates `shared.UserQueries` into the module
+above, together with its own SQL. Changes to the shared files retrigger code generation — the
+directories are tracked as task inputs.
+
+Each entry acts as a SQLDelight source folder, so the package of the generated code is derived
+from a file's directory path below the entry — the files need at least one directory level, same
+as in `src`.
+
+Two things to keep in mind:
+
+- The owning module should treat the shared directory as data-only and not compile it itself
+  (don't place it under that module's `src`). Every module listing the directory generates its own
+  copy of the classes, so two such modules must not end up on the same compile classpath, or the
+  duplicates will clash.
+- The toolchain rejects task inputs that nest, so the directory must lie outside the consuming
+  module's own root. Inside the module, `src` already covers everything.
+
 ## How it works
 
 SQLDelight's compiler is not tied to Gradle — the Gradle plugin merely assembles a project model
@@ -160,6 +190,7 @@ or deleted `.sq` files never leave stale generated code behind.
 
 - One database per module. Multiple databases require multiple modules.
 - No schema dependencies between modules (SQLDelight's `dependency()` mechanism is not wired up).
+  Sharing SQL sources via `additionalSourceDirectories` covers the common cases.
 - No `.db` schema file output and no migration squashing — the Gradle-only auxiliary tasks are not
   replicated. Migration *verification* against a real driver is likewise out of scope; what
   `verifyMigrations` gives you is compiler-level type checking.

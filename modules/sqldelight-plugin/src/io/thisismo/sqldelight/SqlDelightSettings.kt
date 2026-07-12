@@ -1,6 +1,7 @@
 package io.thisismo.sqldelight
 
 import org.jetbrains.amper.plugins.Configurable
+import java.nio.file.Path
 
 /**
  * Per-module SQLDelight configuration, set under `plugins.sqldelight` in `module.yaml`:
@@ -60,4 +61,17 @@ interface SqlDelightSettings {
      * only change when the query itself changes.
      */
     val expandSelectStar: Boolean get() = true
+
+    /**
+     * Extra directories to compile `.sq`/`.sqm` files from, in addition to the module's own
+     * source roots. Relative paths are resolved against the module root, so a feature module can
+     * include SQL that lives in another module, for example `../common/src`. The referenced module
+     * should not run SQLDelight over the same files itself, or both modules will generate the
+     * same classes.
+     *
+     * Each directory acts as a SQLDelight source folder: the package of the generated code is
+     * derived from a file's path below it, so pointing at another module's source root keeps the
+     * same packages as if the files were compiled there.
+     */
+    val additionalSourceDirectories: List<Path> get() = emptyList()
 }

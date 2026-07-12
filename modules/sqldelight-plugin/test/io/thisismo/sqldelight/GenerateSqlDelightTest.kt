@@ -2,6 +2,7 @@ package io.thisismo.sqldelight
 
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.Path
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -12,13 +13,13 @@ import kotlin.test.assertTrue
 
 class GenerateSqlDelightTest {
 
-    private val moduleRoot = Files.createTempDirectory("sqldelight-plugin-module").toFile()
-    private val outputDir = Files.createTempDirectory("sqldelight-plugin-output").toFile()
+    private val tempDirs = mutableListOf<File>()
+    private val moduleRoot = newTempDir("sqldelight-plugin-module")
+    private val outputDir = newTempDir("sqldelight-plugin-output")
 
     @AfterTest
     fun deleteTempDirs() {
-        moduleRoot.deleteRecursively()
-        outputDir.deleteRecursively()
+        tempDirs.forEach(File::deleteRecursively)
     }
 
     @Test
@@ -211,6 +212,64 @@ class GenerateSqlDelightTest {
     }
 
     @Test
+    fun `additional source directories from another module are compiled in`() {
+        writeSource("src/sqldelight/Player.sq", tableWithSelectAll("player"))
+        val commonModule = newTempDir("sqldelight-plugin-common")
+        commonModule.resolve("src/sqldelight/Shared.sq").apply {
+            parentFile.mkdirs()
+            writeText(tableWithSelectAll("shared").trimIndent())
+        }
+
+        generate(additionalSourceDirectories = listOf(commonModule.toPath().resolve("src")))
+
+        assertTrue(outputDir.resolve("sqldelight/PlayerQueries.kt").isFile)
+        assertContains(generatedFile("sqldelight/SharedQueries.kt"), "package sqldelight")
+    }
+
+    @Test
+    fun `relative additional source directories resolve against the module root`() {
+        val commonModule = newTempDir("sqldelight-plugin-common")
+        commonModule.resolve("src/sqldelight/Shared.sq").apply {
+            parentFile.mkdirs()
+            writeText(tableWithSelectAll("shared").trimIndent())
+        }
+        val relative = Path.of("..", commonModule.name, "src")
+
+        generate(additionalSourceDirectories = listOf(relative))
+
+        assertTrue(outputDir.resolve("sqldelight/SharedQueries.kt").isFile)
+    }
+
+    @Test
+    fun `missing additional source directory is rejected`() {
+        writeSource("src/sqldelight/Player.sq", tableWithSelectAll("player"))
+
+        val failure = assertFailsWith<IllegalArgumentException> {
+            generate(additionalSourceDirectories = listOf(Path.of("no/such/directory")))
+        }
+        assertContains(failure.message.orEmpty(), "additionalSourceDirectories")
+    }
+
+    @Test
+    fun `source directory nested inside another is rejected`() {
+        writeSource("src/sqldelight/Player.sq", tableWithSelectAll("player"))
+
+        val failure = assertFailsWith<IllegalArgumentException> {
+            generate(additionalSourceDirectories = listOf(moduleRoot.toPath().resolve("src/sqldelight")))
+        }
+        assertContains(failure.message.orEmpty(), "nested")
+    }
+
+    @Test
+    fun `duplicate source directory entries are ignored`() {
+        writeSource("src/sqldelight/Player.sq", tableWithSelectAll("player"))
+
+        generate(additionalSourceDirectories = listOf(moduleRoot.toPath().resolve("src")))
+
+        assertTrue(outputDir.resolve("sqldelight/PlayerQueries.kt").isFile)
+    }
+
+    @Test
     fun `module without sql sources is skipped without failing`() {
         writeSource("src/io/example/Irrelevant.kt", "package io.example\n\nval irrelevant = Unit")
 
@@ -255,9 +314,11 @@ class GenerateSqlDelightTest {
         generateAsync: Boolean = false,
         deriveSchemaFromMigrations: Boolean = false,
         verifyMigrations: Boolean = false,
+        additionalSourceDirectories: List<Path> = emptyList(),
     ) {
         generateSqlDelight(
             moduleRootDir = moduleRoot.toPath(),
+            additionalSourceDirectories = additionalSourceDirectories,
             outputDirectory = outputDir.toPath(),
             moduleName = moduleName,
             packageName = packageName,
@@ -268,6 +329,9 @@ class GenerateSqlDelightTest {
             verifyMigrations = verifyMigrations,
         )
     }
+
+    private fun newTempDir(prefix: String): File =
+        Files.createTempDirectory(prefix).toFile().also(tempDirs::add)
 
     /** A table definition plus a named query, so that a `<Table>Queries.kt` file is generated. */
     private fun tableWithSelectAll(table: String): String =

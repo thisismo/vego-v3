@@ -2,6 +2,7 @@ tasks:
   generate:
     action: !io.thisismo.sqldelight.generateSqlDelight
       moduleRootDir: ${module.rootDir}
+      additionalSourceDirectories: ${pluginSettings.additionalSourceDirectories}
       outputDirectory: ${taskOutputDir}
       moduleName: ${module.name}
       packageName: ${pluginSettings.packageName}
